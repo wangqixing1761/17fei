@@ -29,7 +29,7 @@ export default function AI() {
                 <div class="max-w-screen-md mx-auto p-4">
                     <div class="p-2 text-center w-full">
                         <a class="block mx-auto" href="/">
-                            <img src="/logo.png" class="w-12 h-12" />
+                            <img src="/kiss-banana.png" class="w-12 h-12" />
                         </a>
 
                         <div class="text-xs">

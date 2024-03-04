@@ -16,7 +16,7 @@ export default function Card() {
         <div class="max-w-screen-md mx-auto ">
           <div class="p-2 flex items-center w-full">
             <a class="flex-1" href="/">
-              <img src="/logo.png" class="w-12 h-12" />
+              <img src="/kiss-banana.png" class="w-12 h-12" />
             </a>
             <div class="flex-auto text-center" ><span id="title">基础版</span>任务卡牌</div>
             <div class="flex-1 text-right" >

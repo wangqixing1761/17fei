@@ -4,7 +4,7 @@ export default function Custom() {
             <div class="max-w-screen-md mx-auto flex flex-col items-center justify-center">
                 <div class="p-2 flex items-center w-full">
                     <a class="flex-1" href="/">
-                        <img src="/logo.png" class="w-12 h-12" />
+                        <img src="/kiss-banana.png" class="w-12 h-12" />
                     </a>
                 </div>
                 <div class="leading-8 text-gray-900 max-w-lg mt-8 max-auto">
