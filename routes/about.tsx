@@ -9,7 +9,7 @@ export default function About() {
                 </div>
                 <div class="leading-8 text-gray-900 max-w-lg mt-8 max-auto">
                     <div class="text-lg text-gray-500">关于本站</div>
-                    {/* <div class="my-4">网站目前只接收客服人工收款</div> */}
+                    <div class="my-4">网站目前只接收客服人工收款</div>
                     <div>情侣互动，增进感情的情趣小游戏（不是情侣也可以玩哦）</div>
                     {/* <div>
                         <span class="line-through">99</span>49元开通终身会员
@@ -20,9 +20,9 @@ export default function About() {
                         <a href="/custom" class="underline">如何制作一个相同的网站赚钱</a>
                     </div> */}
                 </div>
-                {/* <div>
+                <div>
                     <img src="/qrcode.JPG" class="max-w-xs rounded-lg my-4" />
-                </div> */}
+                </div>
             </div>
         </div>
     );
