@@ -12,8 +12,8 @@ export default function VipIsland({ children }: Props) {
    useEffect(()=>{
 
     if(IS_BROWSER){
-      localStorage.setItem('lockVip', JSON.stringify({"type":"boolean","data":true}));
-      localStorage.setItem('vip', true);
+      localStorage.setItem('lockVip', JSON.stringify({"type":"boolean","data":'true'}));
+      localStorage.setItem('vip', 'true');
       location.href = '/'
     }
       return ()=>{}
