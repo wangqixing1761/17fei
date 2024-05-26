@@ -5,7 +5,7 @@ import { useEffect } from "preact/hooks";
 import { IS_BROWSER } from "$fresh/runtime.ts";
 
 interface Props {
-  children: ComponentChildren;
+  children?: ComponentChildren;
 }
 
 export default function VipIsland({ children }: Props) {
