@@ -1,10 +1,12 @@
 import { useSignal } from "@preact/signals";
+import VipIsland from "../islands/vip.tsx";
 
 import Footer from '../components/Footer.tsx'
 
 export default function Home() {
   return (
     <div class="p-2 w-full leading-8 min-h-screen text-shadow bg-pink-400 text-lg text-red-100">
+      <VipIsland></VipIsland>
       <div class="max-w-screen-md mx-auto flex flex-col items-center justify-center">
         <h1 class="text-4xl font-bold my-16">情侣情趣飞行棋</h1>
         <img src="/kiss-banana.png" class="w-16 h-16" />

@@ -22,12 +22,12 @@ export default function VipIsland({ children }: Props) {
    if(IS_BROWSER){
     localStorage.setItem('lockVip', JSON.stringify({"type":"boolean","data":'true'}));
     localStorage.setItem('vip', 'true');
-    location.href = '/'
+    // location.href = '/'
   }
 
   return (
     <div>
-       ...
+      
     </div>
   );
 }

@@ -10,11 +10,11 @@ export default function About() {
                 <div class="leading-8 text-gray-900 max-w-lg mt-8 max-auto">
                     <div class="text-lg text-gray-500">关于本站</div>
                     <div>情侣互动，增进感情的情趣小游戏（不是情侣也可以玩哦）</div>
-                    <div class="my-4">网站目前只有客服人工收款</div>
+                    {/* <div class="my-4">网站目前只有客服人工收款</div>
                     <div>
                         <span class="line-through">10</span>6.9元解锁全部玩法
-                    </div>
-                    <div>添加微信客服[ little-star176 ] 后支付</div>
+                    </div> */}
+                    <div>添加微信客服[ little-star176 ]，最新时间获取更新玩法</div>
                     <div class="mt-4">
                         如需其他定制开发， 欢迎联系合作。
                         {/* <a href="/custom" class="underline">如何制作一个相同的网站赚钱</a> */}
