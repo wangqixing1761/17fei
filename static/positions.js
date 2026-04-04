@@ -102,13 +102,11 @@ let positions = [
 ];
 
 $(function () {
-    let vip = localStorage.getItem("vip");
-    let length = 10;
-    if (vip) {
-        length = 100;
-        $("#position-count").text(100);
-        $("#goabout").hide();
-    }
+    // 免费版：显示全部100个姿势
+    let length = positions.length;
+    $("#position-count").text(100);
+    $("#goabout").hide();
+    
     $("#card").on("change", () => {
         $("#position").attr("src", "");
         if (!$("#card")[0].checked) {
