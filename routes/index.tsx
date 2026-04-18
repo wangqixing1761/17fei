@@ -29,7 +29,7 @@ export default function Home() {
         {/* 游戏卡片网格 */}
         <div class="grid grid-cols-2 gap-4 mb-8">
           {/* 飞行棋 */}
-          <a href="/fxq/index.html" class="group relative bg-white/90 backdrop-blur-lg rounded-3xl p-5 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-white/50 overflow-hidden">
+          <a href="/fxq/new/chess.html" class="group relative bg-white/90 backdrop-blur-lg rounded-3xl p-5 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-white/50 overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-br from-yellow-200/20 to-orange-200/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <div class="relative">
               <div class="text-4xl mb-3">🎲</div>

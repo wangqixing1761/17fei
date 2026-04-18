@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>情侣飞行棋</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 10px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .navbar {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .navbar-title { color: #fff; font-size: 16px; font-weight: 600; }
+        .navbar-btn { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
+        
+        /* 棋盘 - 使用CSS Grid */
+        .board {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 4px;
+            padding: 6px;
+            min-height: 260px;
+            max-width: 100%;
+            aspect-ratio: 1;
+        }
+        
+        .cell {
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .cell:hover { transform: scale(1.08); z-index: 5; }
+        
+        .cell.start { background: linear-gradient(135deg, #3498DB, #2980B9); }
+        .cell.end { background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; font-size: 18px; box-shadow: 0 0 15px rgba(255,215,0,0.5); }
+        .cell.normal { background: linear-gradient(135deg, #9B59B6, #8E44AD); }
+        .cell.love { background: linear-gradient(135deg, #E91E63, #C2185B); }
+        .cell.couple { background: linear-gradient(135deg, #FF5722, #D84315); }
+        .cell.advanced { background: linear-gradient(135deg, #00BCD4, #0097A7); }
+        .cell.private { background: linear-gradient(135deg, #9C27B0, #7B1FA2); }
+        .cell.active { animation: pulse 0.8s infinite; box-shadow: 0 0 15px rgba(255,255,255,0.7); }
+        
+        /* 格子图标 */
+        .cell .cell-icon {
+            font-size: 18px;
+            margin-bottom: 2px;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+        }
+        .cell .cell-num {
+            font-size: 11px;
+            opacity: 0.9;
+            position: absolute;
+            top: 3px;
+            left: 5px;
+        }
+        
+        /* 格子tooltip */
+        .cell::after {
+            content: attr(data-type);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+            opacity: 0;
+            transition: all 0.2s ease;
+            pointer-events: none;
+            margin-bottom: 5px;
+            z-index: 100;
+        }
+        .cell:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+        
+        /* 路径箭头 */
+        .cell .arrow {
+            position: absolute;
+            font-size: 10px;
+            opacity: 0.7;
+            color: rgba(255,255,255,0.8);
+        }
+        .cell .arrow.right { right: 2px; top: 50%; transform: translateY(-50%); }
+        .cell .arrow.down { bottom: 2px; left: 50%; transform: translateX(-50%); }
+        .cell .arrow.left { left: 2px; top: 50%; transform: translateY(-50%); }
+        .cell .arrow.up { top: 2px; left: 50%; transform: translateX(-50%); }
+        
+        /* 星空背景 */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle 2s infinite;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 0.8; transform: scale(1); }
+        }
+        
+        @keyframes pulse {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* 中心区域 */
+        .center {
+            grid-column: 2 / 5;
+            grid-row: 2 / 5;
+            background: rgba(255,255,255,0.06);
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            pointer-events: none;
+        }
+        .center-icon { font-size: 32px; }
+        .center-label { color: rgba(255,255,255,0.45); font-size: 13px; }
+        
+        /* 玩家 */
+        .player {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 20;
+            box-shadow: 
+                0 3px 10px rgba(0,0,0,0.4),
+                inset 0 2px 4px rgba(255,255,255,0.3),
+                0 0 0 2px #fff;
+        }
+        .player.male { 
+            background: linear-gradient(135deg, #3498DB, #2980B9);
+            box-shadow: 
+                0 3px 10px rgba(52,152,219,0.5),
+                inset 0 2px 4px rgba(255,255,255,0.3),
+                0 0 0 2px #fff;
+        }
+        .player.female { 
+            background: linear-gradient(135deg, #E91E63, #C2185B);
+            box-shadow: 
+                0 3px 10px rgba(233,30,99,0.5),
+                inset 0 2px 4px rgba(255,255,255,0.3),
+                0 0 0 2px #fff;
+        }
+        .player.moving {
+            animation: bounce 0.5s ease-in-out;
+            z-index: 30;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -60%) scale(1.15); }
+        }
+        
+        /* 骰子区 */
+        .dice-area {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            margin-top: 8px;
+        }
+        .turn-text { color: #fff; font-size: 14px; margin-bottom: 8px; }
+        .turn-text b { color: #FFD700; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .dice-wrap { margin-bottom: 10px; }
+        .dice {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(145deg, #fff 0%, #f0f0f0 50%, #e0e0e0 100%);
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            cursor: pointer;
+            box-shadow: 
+                0 6px 20px rgba(0,0,0,0.3),
+                inset 0 -3px 8px rgba(0,0,0,0.1),
+                inset 0 3px 8px rgba(255,255,255,0.8);
+            transition: all 0.2s;
+            transform-style: preserve-3d;
+        }
+        .dice:hover { transform: translateY(-3px) rotateX(5deg); }
+        .dice.rolling { animation: diceRoll 0.5s ease-in-out; }
+        @keyframes diceRoll {
+            0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
+            25% { transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg); }
+            50% { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg); }
+            75% { transform: rotateX(540deg) rotateY(270deg) rotateZ(135deg); }
+            100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
+        }
+        
+        /* 回合指示器 */
+        .turn-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+        }
+        .turn-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #3498DB;
+            animation: blink 1.5s infinite;
+        }
+        .turn-indicator .dot.female { background: #E91E63; }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .roll-btn {
+            background: linear-gradient(135deg,#E91E63,#C2185B);
+            color: #fff;
+            border: none;
+            padding: 10px 35px;
+            font-size: 16px;
+            border-radius: 22px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(233,30,99,0.35);
+        }
+        .roll-btn:hover:not(:disabled) { transform: translateY(-2px); }
+        .roll-btn:disabled { background: #555; cursor: not-allowed; }
+        
+        /* 弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-box {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 18px;
+            padding: 24px;
+            width: 88%;
+            max-width: 380px;
+            text-align: center;
+        }
+        .modal-title { color: #FFD700; font-size: 22px; margin-bottom: 14px; }
+        .mode-list { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+        .mode-item {
+            background: rgba(255,255,255,0.08);
+            border: none;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mode-item:hover { background: rgba(255,255,255,0.15); transform: translateX(4px); }
+        .mode-item.active { background: linear-gradient(135deg,#E91E63,#C2185B); }
+        .tag { background: #FFD700; color: #333; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+        .task-box { padding: 18px; background: rgba(255,255,255,0.08); border-radius: 12px; color: #fff; font-size: 17px; line-height: 1.5; margin-bottom: 16px; }
+        .btn-ok { background: linear-gradient(135deg,#3498DB,#2980B9); color: #fff; border: none; padding: 10px 28px; font-size: 15px; border-radius: 18px; cursor: pointer; }
+        .win-emoji { font-size: 52px; }
+        .win-title { color: #FFD700; font-size: 26px; margin-bottom: 8px; }
+        .win-sub { color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 20px; }
+        .btn-restart { background: linear-gradient(135deg,#27AE60,#229954); color: #fff; border: none; padding: 12px 36px; font-size: 16px; border-radius: 22px; cursor: pointer; }
+
+        @media (min-width: 768px) {
+            .container { max-width: 600px; padding: 15px; }
+            .board { min-height: 400px; gap: 8px; }
+            .cell { font-size: 16px; border-radius: 12px; }
+            .cell .cell-icon { font-size: 24px; }
+            .cell .cell-num { font-size: 12px; }
+            .player { width: 40px; height: 40px; font-size: 20px; }
+            .dice { width: 90px; height: 90px; font-size: 46px; }
+            .center-icon { font-size: 48px; }
+        }
+        @media (max-width: 380px) {
+            .board { gap: 3px; padding: 5px; min-height: 240px; }
+            .cell { font-size: 10px; border-radius: 6px; }
+            .cell .cell-icon { font-size: 14px; }
+            .cell .cell-num { font-size: 8px; top: 2px; left: 3px; }
+            .cell .arrow { font-size: 8px; }
+            .player { width: 22px; height: 22px; font-size: 11px; }
+            .dice { width: 55px; height: 55px; font-size: 28px; }
+            .navbar-title { font-size: 14px; }
+            .center-icon { font-size: 24px; }
+            .center-label { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+<!-- 星空背景 -->
+<div class="stars" id="stars"></div>
+<div class="container">
+    <div class="navbar">
+        <div class="navbar-title">💕 情侣飞行棋 <span id="ver">v3.0</span></div>
+        <button class="navbar-btn" onclick="openModal('modeModal')">⚙️</button>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="dice-area">
+        <div class="turn-indicator">
+            <span class="dot" id="turnDot"></span>
+            <span class="turn-text">当前回合: <b id="curPlayer">男方</b></span>
+        </div>
+        <div class="dice-wrap"><div class="dice" id="dice" onclick="rollDice()">🎲</div></div>
+        <button class="roll-btn" id="rollBtn" onclick="rollDice()">掷骰子</button>
+    </div>
+</div>
+
+<!-- 模式选择 -->
+<div class="modal" id="modeModal">
+    <div class="modal-box">
+        <div class="modal-title">选择游戏模式</div>
+        <div class="mode-list" id="modeList"></div>
+    </div>
+</div>
+
+<!-- 任务弹窗 -->
+<div class="modal" id="taskModal">
+    <div class="modal-box">
+        <div class="modal-title">✨ 任务</div>
+        <div class="task-box" id="taskText"></div>
+        <button class="btn-ok" onclick="closeModal('taskModal')">知道了</button>
+    </div>
+</div>
+
+<!-- 胜利弹窗 -->
+<div class="modal" id="winModal">
+    <div class="modal-box">
+        <div class="win-emoji">🎉</div>
+        <div class="win-title" id="winTitle">男方胜利!</div>
+        <div class="win-sub">可以要求对方做任何事情~</div>
+        <button class="btn-restart" onclick="restartGame()">再来一局</button>
+    </div>
+</div>
+
+<script>
+// ========== 游戏模式 ==========
+const MODES = {
+    1: { name: '基础模式', tasks: ['给彼此一个拥抱','说一句甜言蜜语','互相按摩5分钟','一起做深呼吸','分享今天最开心的事','给对方一个吻','手牵手一分钟','对视30秒','说一句我爱你','分享一个小秘密','给对方捶背','一起喝水','互相夸奖对方','做一个鬼脸','模仿动物叫声','分享一个笑话'] },
+    2: { name: '恋爱版', tasks: ['深情拥抱一分钟','额头轻轻一吻','说三句不同语言的我爱你','分享第一次见面的感受','为对方唱一首歌','说出对方的三个优点','互相喂食一块水果','一起自拍一张','模仿对方的口头禅','给彼此起专属昵称','分享未来三年愿望','背靠背坐着','为对方揉肩膀','说句肉麻情话','做同一个动作','分享最近心动'] },
+    3: { name: '情侣版', tasks: ['公主抱对方5秒','深情对视一分钟','为对方做一件小事','分享最爱对方的一点','手牵手不说话','给对方惊喜','说最幸福的事','互相整理头发','做个小游戏','分享甜蜜回忆','为对方捶腿','说承诺的话','模仿对方生气样子','想一起去的地方','做晚餐计划','给温暖拥抱'] },
+    4: { name: '高级版', tasks: ['法式深吻30秒','按摩全身','泡热水澡','分享私密想法','涂身体乳','看浪漫电影','准备礼物','跳一支舞','分享心动时刻','互相服务','做SPA','最深渴望','尝试新姿势','特别晚餐','洗鸳鸯浴','浪漫一晚'] },
+    5: { name: '私密版', tasks: ['热吻一分钟','全身按摩','探索敏感带','狂野幻想','角色扮演','小玩具','服务对方','新地点','私密愿望','泡泡浴','束缚游戏','口交','后入式','满足需求','激情一晚','任何事'] },
+    6: { name: '组合模式', tasks: ['奇数拥抱偶数亲','轮流服务','完成小挑战','决定亲密程度','喂食接吻','做运动','谁主动','保密秘密','满足愿望','做什么','创造回忆','姿势','探索','时间长短','达到巅峰','自由发挥'] }
+};
+
+// ========== 棋盘布局 ==========
+// 5列 x 5行，外圈顺时针螺旋，中心装饰
+//
+//    0  1  2  3  4
+// 0 [★][1][2][3][4]  ← 终点★在左上角，上边 1-4
+// 1 [  ][ ][ ][ ][5]   ← 5在右边
+// 2 [15][ ][💕][ ][6]   ← 15在左边，6在右边
+// 3 [14][ ][ ][ ][7]   ← 14在左边，7在右边
+// 4 [13][12][11][10][9] ← 下边 9-13 (右→左)
+// 路径: ★→1→2→3→4→5→6→7→8→9→10→11→12→13→14→15→★
+
+const CELLS = [
+    // 终点★在左上角(col=0,row=0)，起点1在右边
+    {id:1,c:1,r:0,t:'start'}, {id:2,c:2,r:0,t:'normal'}, {id:3,c:3,r:0,t:'love'}, 
+    {id:4,c:4,r:0,t:'normal'},   // 上边 1-4 (col=1-4)
+    {id:5,c:4,r:1,t:'couple'}, {id:6,c:4,r:2,t:'advanced'}, {id:7,c:4,r:3,t:'private'}, // 右边 5-7
+    {id:8,c:4,r:4,t:'love'}, {id:9,c:3,r:4,t:'normal'}, {id:10,c:2,r:4,t:'couple'},   // 下边 8-10
+    {id:11,c:1,r:4,t:'advanced'}, {id:12,c:0,r:4,t:'private'}, // 下边 11-12
+    {id:13,c:0,r:3,t:'normal'}, {id:14,c:0,r:2,t:'love'}, {id:15,c:0,r:1,t:'private'}, // 左边 13-15
+    {id:16,c:0,r:0,t:'end'}   // 终点 ★ (左上角col=0,row=0)
+];
+
+// ========== 状态 ==========
+const state = { mode: 1, malePos: 1, femalePos: 1, turn: 'male', rolling: false, over: false };
+
+// ========== 初始化 ==========
+function init() {
+    createStars();
+    renderModes();
+    buildBoard();
+    createPlayers();
+    updatePositions();
+}
+
+function renderModes() {
+    const list = document.getElementById('modeList');
+    list.innerHTML = '';
+    Object.entries(MODES).forEach(([k, v]) => {
+        const btn = document.createElement('button');
+        btn.className = `mode-item${k==1?' active':''}`;
+        btn.dataset.mode = k;
+        btn.innerHTML = `<span>${v.name}</span>${k>1?'<span class="tag">HOT</span>':''}`;
+        btn.onclick = () => selectMode(+k);
+        list.appendChild(btn);
+    });
+}
+
+// 格子类型配置
+const CELL_TYPES = {
+    start: { name: '起点', icon: '🚀' },
+    end: { name: '终点', icon: '🏆' },
+    normal: { name: '普通', icon: '✨' },
+    love: { name: '甜蜜', icon: '💕' },
+    couple: { name: '情侣', icon: '👫' },
+    advanced: { name: '高级', icon: '🔥' },
+    private: { name: '私密', icon: '💋' }
+};
+
+// 路径方向配置
+const PATH_ARROWS = {
+    1: { char: '→', cls: 'right' }, // 1→2
+    2: { char: '→', cls: 'right' }, // 2→3
+    3: { char: '→', cls: 'right' }, // 3→4
+    4: { char: '↓', cls: 'down' },  // 4→5
+    5: { char: '↓', cls: 'down' },  // 5→6
+    6: { char: '↓', cls: 'down' }, // 6→7
+    7: { char: '↓', cls: 'down' }, // 7→8
+    8: { char: '←', cls: 'left' },  // 8→9
+    9: { char: '←', cls: 'left' },  // 9→10
+    10: { char: '←', cls: 'left' }, // 10→11
+    11: { char: '←', cls: 'left' }, // 11→12
+    12: { char: '↑', cls: 'up' },   // 12→13
+    13: { char: '↑', cls: 'up' },   // 13→14
+    14: { char: '↑', cls: 'up' },   // 14→15
+    15: { char: '↖', cls: 'up' }    // 15→★(终点)
+};
+
+function buildBoard() {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+    
+    // 格子
+    CELLS.forEach(d => {
+        const el = document.createElement('div');
+        el.className = `cell ${d.t}`;
+        el.id = `c${d.id}`;
+        el.style.gridColumn = d.c + 1;
+        el.style.gridRow = d.r + 1;
+        el.dataset.type = CELL_TYPES[d.t].name;
+        
+        // 格子内容
+        const icon = d.t === 'end' ? '🏆' : CELL_TYPES[d.t].icon;
+        const num = d.t === 'end' ? '★' : d.id;
+        const arrowData = PATH_ARROWS[d.id];
+        const arrow = arrowData ? `<span class="arrow ${arrowData.cls}">${arrowData.char}</span>` : '';
+        
+        el.innerHTML = `
+            <span class="cell-num">${num}</span>
+            <span class="cell-icon">${icon}</span>
+            ${arrow}
+        `;
+        el.onclick = () => showTask(d.id);
+        board.appendChild(el);
+    });
+    
+    // 中心
+    const center = document.createElement('div');
+    center.className = 'center';
+    center.innerHTML = '<div class="center-icon">💕</div><div class="center-label">情侣飞行棋</div>';
+    board.appendChild(center);
+}
+
+// 生成星空背景
+function createStars() {
+    const starsContainer = document.getElementById('stars');
+    if (!starsContainer) return;
+    
+    const count = 50;
+    for (let i = 0; i < count; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.animationDelay = Math.random() * 2 + 's';
+        star.style.animationDuration = (1.5 + Math.random()) + 's';
+        
+        // 随机大小
+        const size = 1 + Math.random() * 2;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        
+        starsContainer.appendChild(star);
+    }
+}
+
+function createPlayers() {
+    const board = document.getElementById('board');
+    ['male','female'].forEach(g => {
+        const p = document.createElement('div');
+        p.className = `player ${g}`;
+        p.id = `p${g}`;
+        p.textContent = g==='male'?'👨':'👩';
+        board.appendChild(p);
+    });
+}
+
+// ========== 位置更新 ==========
+function updatePositions(animate = false) {
+    const board = document.getElementById('board');
+    if (!board) return;
+    const br = board.getBoundingClientRect();
+    
+    [{key:'male',pos:state.malePos},{key:'female',pos:state.femalePos}].forEach(({key,pos}) => {
+        const cell = document.getElementById(`c${pos}`);
+        const player = document.getElementById(`p${key}`);
+        if (!cell || !player) return;
+        const cr = cell.getBoundingClientRect();
+        const same = state.malePos === state.femalePos;
+        const ox = same ? (key==='male'?-8:8) : 0;
+        const oy = same ? (key==='male'?-8:8) : 0;
+        const size = player.offsetWidth / 2;
+        
+        player.style.left = (cr.left - br.left + cr.width/2 - size + ox) + 'px';
+        player.style.top = (cr.top - br.top + cr.height/2 - size + oy) + 'px';
+        
+        // 添加移动动画
+        if (animate) {
+            player.classList.add('moving');
+            setTimeout(() => player.classList.remove('moving'), 500);
+        }
+    });
+}
+
+// ========== 游戏逻辑 ==========
+function rollDice() {
+    if (state.rolling || state.over) return;
+    state.rolling = true;
+    $('#rollBtn').disabled = true;
+    
+    const dice = $('#dice');
+    dice.classList.add('rolling');
+    
+    let n = 0;
+    const iv = setInterval(() => {
+        dice.textContent = ['⚀','⚁','⚂','⚃','⚄','⚅'][Math.floor(Math.random()*6)];
+        if (++n >= 12) {
+            clearInterval(iv);
+            dice.classList.remove('rolling');
+            const result = Math.floor(Math.random()*6)+1;
+            dice.textContent = ['⚀','⚁','⚂','⚃','⚄','⚅'][result-1];
+            movePlayer(result);
+        }
+    }, 80);
+}
+
+function movePlayer(steps) {
+    const isMale = state.turn === 'male';
+    let pos = isMale ? state.malePos : state.femalePos;
+    const target = Math.min(pos + steps, 16);
+    let step = 0;
+    
+    const iv = setInterval(() => {
+        pos++;
+        step++;
+        if (isMale) state.malePos = pos; else state.femalePos = pos;
+        updatePositions(true); // 添加动画
+        highlight(pos);
+        
+        if (step >= steps || pos >= 16) {
+            clearInterval(iv);
+            checkWin();
+        }
+    }, 280);
+}
+
+function highlight(id) {
+    document.querySelectorAll('.cell').forEach(c=>c.classList.remove('active'));
+    const el = document.getElementById(`c${id}`);
+    if (el) el.classList.add('active');
+}
+
+function checkWin() {
+    const pos = state.turn === 'male' ? state.malePos : state.femalePos;
+    if (pos >= 16) {
+        state.over = true;
+        $('#winTitle').textContent = (state.turn==='male'?'男方':'女方') + '胜利!';
+        openModal('winModal');
+    } else {
+        setTimeout(() => showTask(pos), 400);
+        state.turn = state.turn === 'male' ? 'female' : 'male';
+        updateTurnIndicator();
+        state.rolling = false;
+        $('#rollBtn').disabled = false;
+    }
+}
+
+// 更新回合指示器
+function updateTurnIndicator() {
+    $('#curPlayer').textContent = state.turn === 'male' ? '男方' : '女方';
+    const dot = $('#turnDot');
+    dot.className = 'dot ' + (state.turn === 'male' ? '' : 'female');
+}
+
+// ========== 任务 & 弹窗 ==========
+function showTask(id) {
+    if (id === 1 || id === 16) return;
+    const mode = MODES[state.mode];
+    const task = mode.tasks[(id - 2) % mode.tasks.length];
+    $('#taskText').textContent = task;
+    openModal('taskModal');
+}
+
+function openModal(id) { $(`#${id}`).classList.add('show'); }
+function closeModal(id) { $(`#${id}`).classList.remove('show'); }
+
+function selectMode(m) {
+    state.mode = m;
+    $('#ver').textContent = MODES[m].name;
+    document.querySelectorAll('.mode-item').forEach(i=>i.classList.toggle('active', i.dataset.mode == String(m)));
+    closeModal('modeModal');
+    restartGame();
+}
+
+function restartGame() {
+    state.malePos = 1;
+    state.femalePos = 1;
+    state.turn = 'male';
+    state.rolling = false;
+    state.over = false;
+    $('#rollBtn').disabled = false;
+    closeModal('winModal');
+    document.querySelectorAll('.cell').forEach(c=>c.classList.remove('active'));
+    updateTurnIndicator();
+    updatePositions();
+}
+
+// ========== 工具 ==========
+function $(s) { return document.querySelector(s); }
+
+// 点击外部关闭
+document.querySelectorAll('.modal').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m && m.id !== 'winModal') closeModal(m.id); });
+});
+
+window.addEventListener('resize', updatePositions);
+
+init();
+</script>
+</body>
+</html>
