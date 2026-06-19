@@ -1,4 +1,5 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { launchConfetti, vibrate } from "../lib/effects.ts";
 
 const questions = [
   { q: "对方最常说的一句话是什么？", hint: "想想TA常挂嘴边的口头禅" },
@@ -56,88 +57,122 @@ const quickAnswers = [
   ["我先", "TA先", "同时", "不记得了", "好像是我", "忘了"],
 ];
 
+const TOTAL = 5;
+const BEST_KEY = "quiz_best";
+
+// 随机抽取不重复题目下标
+function pickQuestions(): number[] {
+  const idx = Array.from({ length: questions.length }, (_, i) => i);
+  for (let i = idx.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+  return idx.slice(0, TOTAL);
+}
+
+function isMatch(a: string, b: string): boolean {
+  const x = a.trim().toLowerCase();
+  const y = b.trim().toLowerCase();
+  if (!x || !y) return false;
+  return x === y || x.includes(y) || y.includes(x);
+}
+
+type Phase = "a" | "b" | "result";
+
 export default function QuizPlay() {
-  const [currentQ, setCurrentQ] = useState(0);
-  const [myAnswer, setMyAnswer] = useState("");
-  const [partnerAnswer, setPartnerAnswer] = useState("");
-  const [showResult, setShowResult] = useState(false);
+  const [picks, setPicks] = useState<number[]>(() => pickQuestions());
+  const [round, setRound] = useState(0); // 0-based index into picks
+  const [phase, setPhase] = useState<Phase>("a");
+  const [answerA, setAnswerA] = useState("");
+  const [answerB, setAnswerB] = useState("");
   const [score, setScore] = useState(0);
-  const [round, setRound] = useState(1);
   const [finished, setFinished] = useState(false);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [best, setBest] = useState(0);
 
-  const question = questions[currentQ];
-  const options = quickAnswers[currentQ] || [];
+  useEffect(() => {
+    try {
+      const b = localStorage.getItem(BEST_KEY);
+      if (b) setBest(parseInt(b, 10) || 0);
+    } catch { /* ignore */ }
+  }, []);
 
-  const handleReveal = () => {
-    if (!partnerAnswer) {
-      const randomIdx = Math.floor(Math.random() * options.length);
-      setPartnerAnswer(options[randomIdx] || "心有灵犀");
-    }
-    setShowResult(true);
+  const qIndex = picks[round];
+  const question = questions[qIndex];
+  const options = quickAnswers[qIndex] || [];
+  const matched = phase === "result" && isMatch(answerA, answerB);
+
+  const toPlayerB = () => {
+    if (!answerA.trim()) return;
+    vibrate(12);
+    setPhase("b");
   };
 
-  const checkMatch = () => {
-    const isMatch = myAnswer.toLowerCase() === partnerAnswer.toLowerCase() ||
-      myAnswer.includes(partnerAnswer) ||
-      partnerAnswer.includes(myAnswer);
-    if (isMatch) setScore(score + 1);
-    return isMatch;
-  };
-
-  const nextQuestion = () => {
-    if (showResult) checkMatch();
-    setShowResult(false);
-    setMyAnswer("");
-    setPartnerAnswer("");
-    setSelectedAnswer(null);
-    
-    if (round >= 5) {
-      setFinished(true);
+  const reveal = () => {
+    if (!answerB.trim()) return;
+    const ok = isMatch(answerA, answerB);
+    if (ok) {
+      setScore((s) => s + 1);
+      vibrate([20, 40, 20]);
+      launchConfetti(50);
     } else {
-      setCurrentQ((currentQ + 1) % questions.length);
-      setRound(round + 1);
+      vibrate(20);
     }
+    setPhase("result");
   };
 
-  const selectAnswer = (answer: string) => {
-    setSelectedAnswer(answer);
-    setMyAnswer(answer);
+  const next = () => {
+    if (round + 1 >= TOTAL) {
+      const finalScore = score; // score 已在 reveal 中累加
+      try {
+        if (finalScore > best) {
+          localStorage.setItem(BEST_KEY, String(finalScore));
+          setBest(finalScore);
+        }
+      } catch { /* ignore */ }
+      if (finalScore >= 4) launchConfetti(120);
+      setFinished(true);
+      return;
+    }
+    setRound((r) => r + 1);
+    setAnswerA("");
+    setAnswerB("");
+    setPhase("a");
   };
 
   const restart = () => {
-    setCurrentQ(0);
-    setRound(1);
+    setPicks(pickQuestions());
+    setRound(0);
+    setPhase("a");
+    setAnswerA("");
+    setAnswerB("");
     setScore(0);
-    setMyAnswer("");
-    setPartnerAnswer("");
-    setShowResult(false);
     setFinished(false);
-    setSelectedAnswer(null);
   };
 
-  // 完成页面
   if (finished) {
-    const percentage = Math.round((score / 5) * 100);
-    const resultData = percentage >= 80 
+    const percentage = Math.round((score / TOTAL) * 100);
+    const resultData = percentage >= 80
       ? { emoji: "🏆", text: "灵魂伴侣！默契满分！" }
-      : percentage >= 60 
+      : percentage >= 60
       ? { emoji: "🌟", text: "心有灵犀一点通！" }
-      : percentage >= 40 
+      : percentage >= 40
       ? { emoji: "💫", text: "还需要更多了解彼此~" }
       : { emoji: "🌱", text: "多陪陪TA，增进感情吧~" };
 
     return (
       <div class="text-center">
         <div class="text-8xl mb-6">{resultData.emoji}</div>
-        <h2 class="text-3xl font-bold text-white mb-4">问答结束！</h2>
+        <h2 class="text-3xl font-bold text-purple-800 mb-4">问答结束！</h2>
         <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 mb-6 border border-white/50">
           <div class="text-6xl font-bold text-purple-600 mb-2">{percentage}%</div>
           <div class="text-gray-600 mb-4">默契度</div>
           <div class="text-lg text-purple-600 font-bold mb-4">{resultData.text}</div>
-          <div class="text-gray-500">答对 {score} / 5 题</div>
+          <div class="text-gray-500">答对 {score} / {TOTAL} 题</div>
+          <div class="mt-4 inline-flex items-center gap-2 bg-yellow-50 text-yellow-600 px-4 py-1.5 rounded-full text-sm font-bold">
+            🏅 历史最佳 {Math.max(best, score)} / {TOTAL}
+          </div>
         </div>
-        <button 
+        <button
           onClick={restart}
           class="inline-flex items-center gap-2 bg-white text-purple-600 font-bold px-6 py-3 rounded-full shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1"
         >
@@ -148,117 +183,135 @@ export default function QuizPlay() {
     );
   }
 
-  // 游戏页面
   return (
     <div>
       {/* 进度条 */}
       <div class="flex justify-center gap-2 mb-6">
-        {[1, 2, 3, 4, 5].map(i => (
-          <div 
+        {Array.from({ length: TOTAL }, (_, i) => (
+          <div
             key={i}
-            class={`w-8 h-2 rounded-full transition-all ${i <= round ? 'bg-white' : 'bg-white/30'}`}
+            class={`h-2 rounded-full transition-all ${i === round ? "w-10 bg-purple-500" : i < round ? "w-8 bg-purple-400/80" : "w-8 bg-white/60"}`}
           />
         ))}
       </div>
-      
+
       {/* 题目 */}
-      <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 mb-6 border border-white/50">
-        <div class="text-center mb-4">
-          <span class="text-sm text-purple-600 font-medium">第 {round} 题</span>
+      <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 mb-5 border border-white/50">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-sm text-purple-600 font-medium">第 {round + 1} / {TOTAL} 题</span>
+          <span class="text-xs text-gray-400">已答对 {score}</span>
         </div>
         <h2 class="text-xl font-bold text-gray-800 text-center mb-2">{question.q}</h2>
         <p class="text-gray-500 text-sm text-center">💡 {question.hint}</p>
       </div>
-      
-      {!showResult ? (
-        <div>
-          {/* 快速选项 */}
-          <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-4 mb-4 border border-white/50">
-            <p class="text-sm text-gray-600 mb-3 text-center">💬 选择或输入答案</p>
-            <div class="flex flex-wrap justify-center gap-2">
-              {options.map((ans, i) => (
-                <button
-                  key={i}
-                  onClick={() => selectAnswer(ans)}
-                  class={`px-3 py-2 rounded-full text-sm transition-all ${
-                    selectedAnswer === ans 
-                      ? 'bg-purple-500 text-white shadow-lg scale-105' 
-                      : 'bg-white text-gray-600 hover:bg-purple-100'
-                  }`}
-                >
-                  {ans}
-                </button>
-              ))}
+
+      {phase !== "result"
+        ? (
+          <div>
+            {/* 当前作答方 */}
+            <div class={`text-center mb-4 rounded-2xl py-3 px-4 font-bold ${phase === "a" ? "bg-purple-500/90 text-white" : "bg-pink-500/90 text-white"}`}>
+              {phase === "a" ? "🙋 玩家 A 作答（请 B 暂时回避）" : "🙋‍♀️ 玩家 B 作答（猜 A 的答案）"}
+            </div>
+
+            {/* 快速选项 */}
+            <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-4 mb-4 border border-white/50">
+              <p class="text-sm text-gray-600 mb-3 text-center">💬 选择或输入答案</p>
+              <div class="flex flex-wrap justify-center gap-2">
+                {options.map((ans, i) => {
+                  const cur = phase === "a" ? answerA : answerB;
+                  const set = phase === "a" ? setAnswerA : setAnswerB;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => set(ans)}
+                      class={`px-3 py-2 rounded-full text-sm transition-all ${cur === ans ? "bg-purple-500 text-white shadow-lg scale-105" : "bg-white text-gray-600 hover:bg-purple-100"}`}
+                    >
+                      {ans}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 自定义输入 */}
+            <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-4 mb-6 border border-white/50">
+              <input
+                type="text"
+                value={phase === "a" ? answerA : answerB}
+                onInput={(e) => {
+                  const v = (e.target as HTMLInputElement).value;
+                  if (phase === "a") setAnswerA(v);
+                  else setAnswerB(v);
+                }}
+                placeholder="或者写下你的答案..."
+                class="w-full px-4 py-3 rounded-xl border-2 border-purple-200 focus:border-purple-400 focus:outline-none text-center text-lg"
+              />
+            </div>
+
+            {/* 操作按钮 */}
+            <div class="text-center">
+              {phase === "a"
+                ? (
+                  <button
+                    onClick={toPlayerB}
+                    disabled={!answerA.trim()}
+                    class={`inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full shadow-xl transition-all text-lg ${answerA.trim() ? "bg-white text-purple-600 hover:shadow-2xl hover:-translate-y-1" : "bg-white/50 text-purple-300 cursor-not-allowed"}`}
+                  >
+                    <span>🤫</span>
+                    <span>换 B 作答</span>
+                  </button>
+                )
+                : (
+                  <button
+                    onClick={reveal}
+                    disabled={!answerB.trim()}
+                    class={`inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full shadow-xl transition-all text-lg ${answerB.trim() ? "bg-white text-pink-600 hover:shadow-2xl hover:-translate-y-1" : "bg-white/50 text-pink-300 cursor-not-allowed"}`}
+                  >
+                    <span>🎭</span>
+                    <span>揭晓答案</span>
+                  </button>
+                )}
+              <p class="text-purple-700/60 text-sm mt-3">
+                {phase === "a" ? "选好后把手机交给 B" : "看看你们是否心有灵犀"}
+              </p>
             </div>
           </div>
-          
-          {/* 自定义输入 */}
-          <div class="bg-white/80 backdrop-blur-lg rounded-2xl p-4 mb-6 border border-white/50">
-            <input
-              type="text"
-              value={myAnswer}
-              onChange={(e) => {
-                setMyAnswer((e.target as HTMLInputElement).value);
-                setSelectedAnswer(null);
-              }}
-              placeholder="或者写下你的答案..."
-              class="w-full px-4 py-3 rounded-xl border-2 border-purple-200 focus:border-purple-400 focus:outline-none text-center text-lg"
-            />
-          </div>
-          
-          {/* 揭晓按钮 */}
-          <div class="text-center">
-            <button
-              onClick={handleReveal}
-              disabled={!myAnswer}
-              class={`inline-flex items-center gap-2 font-bold px-8 py-4 rounded-full shadow-xl transition-all text-lg ${
-                myAnswer 
-                  ? 'bg-white text-purple-600 hover:shadow-2xl hover:-translate-y-1' 
-                  : 'bg-white/50 text-purple-300 cursor-not-allowed'
-              }`}
-            >
-              <span>🎭</span>
-              <span>揭晓答案</span>
-            </button>
-            <p class="text-white/60 text-sm mt-3">准备好让对方看你的答案了吗？</p>
-          </div>
-        </div>
-      ) : (
-        <div>
-          {/* 答案对比 */}
-          <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="bg-white/95 backdrop-blur-xl rounded-2xl p-4 text-center border-2 border-purple-300">
-              <div class="text-3xl mb-2">😊</div>
-              <div class="text-xs text-gray-400 mb-1">你的答案</div>
-              <div class="font-bold text-gray-800">{myAnswer}</div>
+        )
+        : (
+          <div>
+            {/* 答案对比 */}
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              <div class="bg-white/95 backdrop-blur-xl rounded-2xl p-4 text-center border-2 border-purple-300">
+                <div class="text-3xl mb-2">😊</div>
+                <div class="text-xs text-gray-400 mb-1">A 的答案</div>
+                <div class="font-bold text-gray-800 break-all">{answerA}</div>
+              </div>
+              <div class="bg-white/95 backdrop-blur-xl rounded-2xl p-4 text-center border-2 border-pink-300">
+                <div class="text-3xl mb-2">😍</div>
+                <div class="text-xs text-gray-400 mb-1">B 的答案</div>
+                <div class="font-bold text-gray-800 break-all">{answerB}</div>
+              </div>
             </div>
-            <div class="bg-white/95 backdrop-blur-xl rounded-2xl p-4 text-center border-2 border-pink-300">
-              <div class="text-3xl mb-2">😍</div>
-              <div class="text-xs text-gray-400 mb-1">TA的答案</div>
-              <div class="font-bold text-gray-800">{partnerAnswer}</div>
+
+            {/* 匹配结果 */}
+            <div class={`text-center p-4 rounded-2xl mb-6 ${matched ? "bg-green-100" : "bg-yellow-100"}`}>
+              <div class="text-4xl mb-2">{matched ? "🎉" : "🤔"}</div>
+              <div class={`font-bold ${matched ? "text-green-600" : "text-yellow-600"}`}>
+                {matched ? "默契成功！+1 分" : "略有差异，下次努力"}
+              </div>
+            </div>
+
+            <div class="text-center">
+              <button
+                onClick={next}
+                class="inline-flex items-center gap-2 bg-white text-purple-600 font-bold px-8 py-4 rounded-full shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all text-lg"
+              >
+                <span>{round + 1 >= TOTAL ? "🏁" : "→"}</span>
+                <span>{round + 1 >= TOTAL ? "查看结果" : "下一题"}</span>
+              </button>
             </div>
           </div>
-          
-          {/* 匹配结果 */}
-          <div class={`text-center p-4 rounded-2xl mb-6 ${checkMatch() ? 'bg-green-100' : 'bg-yellow-100'}`}>
-            <div class="text-4xl mb-2">{checkMatch() ? '🎉' : '🤔'}</div>
-            <div class={`font-bold ${checkMatch() ? 'text-green-600' : 'text-yellow-600'}`}>
-              {checkMatch() ? '默契成功！' : '略有差异'}
-            </div>
-          </div>
-          
-          {/* 下一题 */}
-          <div class="text-center">
-            <button
-              onClick={nextQuestion}
-              class="inline-flex items-center gap-2 bg-white text-purple-600 font-bold px-8 py-4 rounded-full shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all text-lg"
-            >
-              <span>{round >= 5 ? '🏁' : '→'}</span>
-              <span>{round >= 5 ? '查看结果' : '下一题'}</span>
-            </button>
-          </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

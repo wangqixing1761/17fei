@@ -13,7 +13,7 @@ export default function Footer(props: JSX.HTMLAttributes<HTMLButtonElement>) {
 					<span>关于</span>
 				</a>
 			</div>
-			<div class="text-center text-white/50 text-xs pb-4">
+			<div class="text-center text-purple-500/60 text-xs pb-4">
 				have fun ✨
 			</div>
 		</>

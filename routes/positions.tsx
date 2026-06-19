@@ -12,10 +12,10 @@ export default function Positions() {
                 <title>情趣姿势大全</title>
             </Head>
             
-            <div class="min-h-screen w-full relative overflow-hidden" style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 50%, #EC4899 100%)">
+            <div class="min-h-screen w-full relative overflow-hidden" style="background: linear-gradient(160deg, #FCE3EF 0%, #F4DCF7 50%, #E6DCFB 100%)">
                 {/* 装饰元素 */}
-                <div class="absolute top-20 left-10 w-32 h-32 bg-purple-300/20 rounded-full blur-3xl animate-pulse"></div>
-                <div class="absolute bottom-40 right-10 w-40 h-40 bg-yellow-300/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                <div class="absolute top-20 left-10 w-32 h-32 bg-purple-200/40 rounded-full blur-3xl animate-pulse"></div>
+                <div class="absolute bottom-40 right-10 w-40 h-40 bg-pink-200/40 rounded-full blur-3xl animate-pulse" style={{animationDelay: '0.5s'}}></div>
                 
                 {/* 顶部导航 */}
                 <div class="sticky top-0 z-50 bg-white/95 backdrop-blur-lg shadow-lg">
@@ -38,8 +38,8 @@ export default function Positions() {
                 <div class="max-w-4xl mx-auto px-4 py-6 relative z-10">
                     {/* 标题区域 */}
                     <div class="text-center mb-6">
-                        <h2 class="text-3xl font-bold text-white mb-2 drop-shadow-lg">全部解锁</h2>
-                        <p class="text-white/70">共 {positions.length} 个姿势 · 完全免费浏览</p>
+                        <h2 class="text-3xl font-bold text-purple-800 mb-2">全部解锁</h2>
+                        <p class="text-purple-700/70">共 {positions.length} 个姿势 · 完全免费浏览</p>
                     </div>
 
                     {/* 姿势网格 */}

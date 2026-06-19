@@ -2,11 +2,11 @@ import Footer from '../components/Footer.tsx'
 
 export default function About() {
     return (
-      <div class="min-h-screen w-full relative overflow-hidden" style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 50%, #EC4899 100%)">
+      <div class="min-h-screen w-full relative overflow-hidden" style="background: linear-gradient(160deg, #FCE3EF 0%, #F4DCF7 50%, #E6DCFB 100%)">
         {/* 装饰性浮动元素 */}
-        <div class="absolute top-20 right-10 w-40 h-40 bg-yellow-300/10 rounded-full blur-3xl animate-pulse"></div>
-        <div class="absolute top-1/2 left-0 w-60 h-60 bg-purple-400/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '0.7s'}}></div>
-        <div class="absolute bottom-20 right-1/4 w-32 h-32 bg-pink-300/20 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1.2s'}}></div>
+        <div class="absolute top-20 right-10 w-40 h-40 bg-pink-200/40 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute top-1/2 left-0 w-60 h-60 bg-purple-200/40 rounded-full blur-3xl animate-pulse" style={{animationDelay: '0.7s'}}></div>
+        <div class="absolute bottom-20 right-1/4 w-32 h-32 bg-rose-200/40 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1.2s'}}></div>
 
         <div class="max-w-2xl mx-auto px-4 py-8 relative z-10">
           {/* Logo 区域 */}
@@ -17,10 +17,10 @@ export default function About() {
                 <img src="/kiss-banana.png" class="w-32 h-32 relative mx-auto rounded-full shadow-2xl border-4 border-white/50" />
               </a>
             </div>
-            <h1 class="text-4xl font-bold text-white mt-6 mb-2 drop-shadow-lg">
+            <h1 class="text-4xl font-bold text-purple-800 mt-6 mb-2">
               情侣飞行棋
             </h1>
-            <p class="text-white/80 text-lg">专为情侣设计的趣味互动游戏</p>
+            <p class="text-purple-700/70 text-lg">专为情侣设计的趣味互动游戏</p>
           </div>
 
           {/* 主功能卡片 */}
@@ -132,7 +132,7 @@ export default function About() {
           </div>
 
           {/* 底部 */}
-          <div class="text-center mt-8 text-pink-100 text-sm">
+          <div class="text-center mt-8 text-purple-600/60 text-sm">
             <p>Made with 💕 for couples</p>
           </div>
         </div>

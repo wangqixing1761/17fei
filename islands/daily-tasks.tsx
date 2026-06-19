@@ -1,4 +1,5 @@
-import { useState, useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { launchConfetti, vibrate } from "../lib/effects.ts";
 
 const allTasks = [
   { task: "给对方一个拥抱 10 秒", emoji: "🤗", category: "甜蜜" },
@@ -44,22 +45,32 @@ const categoryColors: Record<string, string> = {
   "纪念": "bg-rose-100 text-rose-600",
   "放松": "bg-cyan-100 text-cyan-600",
   "健康": "bg-emerald-100 text-emerald-600",
+  "自定义": "bg-teal-100 text-teal-600",
 };
 
-// 获取今日任务（基于日期种子）
-function getDailyTasks() {
+interface TaskItem {
+  task: string;
+  emoji: string;
+  category: string;
+}
+
+const STREAK_KEY = "daily_streak";
+
+function ymd(d: Date): string {
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+// 获取今日任务（基于日期种子，保证一天内稳定）
+function getDailyTasks(): TaskItem[] {
   const today = new Date();
   const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-  const tasks: typeof allTasks = [];
+  const tasks: TaskItem[] = [];
   let currentSeed = seed;
-  
   while (tasks.length < 3) {
     currentSeed = (currentSeed * 1103515245 + 12345) % (1 << 31);
     const index = currentSeed % allTasks.length;
     const task = allTasks[index];
-    if (!tasks.find(t => t.task === task.task)) {
-      tasks.push(task);
-    }
+    if (!tasks.find((t) => t.task === task.task)) tasks.push(task);
   }
   return tasks;
 }
@@ -68,121 +79,208 @@ export default function DailyTasks() {
   const today = new Date();
   const todayStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
   const seed = `daily_${today.getFullYear()}$${today.getMonth()}$${today.getDate()}`;
+  const customKey = `${seed}_custom`;
   const dailyTasks = getDailyTasks();
-  
+
   const [completed, setCompleted] = useState<string[]>([]);
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [customTasks, setCustomTasks] = useState<TaskItem[]>([]);
+  const [newTask, setNewTask] = useState("");
+  const [streak, setStreak] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
+
+  // 全部条目（每日 + 自定义）
+  const items: TaskItem[] = [...dailyTasks, ...customTasks];
+  const total = items.length;
+  const doneCount = completed.filter((t) => items.some((it) => it.task === t)).length;
+  const allDone = total > 0 && doneCount === total;
 
   useEffect(() => {
-    const saved = localStorage.getItem(seed);
-    if (saved) {
-      setCompleted(JSON.parse(saved));
-    }
+    try {
+      const savedDone = localStorage.getItem(seed);
+      if (savedDone) setCompleted(JSON.parse(savedDone));
+      const savedCustom = localStorage.getItem(customKey);
+      if (savedCustom) setCustomTasks(JSON.parse(savedCustom));
+      const savedStreak = localStorage.getItem(STREAK_KEY);
+      if (savedStreak) {
+        const data = JSON.parse(savedStreak) as { date: string; streak: number };
+        setStreak(data.streak || 0);
+      }
+    } catch { /* ignore */ }
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(seed, JSON.stringify(completed));
-  }, [completed]);
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(seed, JSON.stringify(completed));
+    } catch { /* ignore */ }
+  }, [completed, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(customKey, JSON.stringify(customTasks));
+    } catch { /* ignore */ }
+  }, [customTasks, hydrated]);
+
+  // 连续打卡：当天首次全部完成时累加
+  function bumpStreak() {
+    try {
+      const raw = localStorage.getItem(STREAK_KEY);
+      const todayKey = ymd(today);
+      const yesterday = new Date(today.getTime() - 86400000);
+      const yKey = ymd(yesterday);
+      let data: { date: string; streak: number } = raw ? JSON.parse(raw) : { date: "", streak: 0 };
+      if (data.date === todayKey) {
+        setStreak(data.streak);
+        return; // 今日已计入
+      }
+      const next = data.date === yKey ? data.streak + 1 : 1;
+      data = { date: todayKey, streak: next };
+      localStorage.setItem(STREAK_KEY, JSON.stringify(data));
+      setStreak(next);
+    } catch { /* ignore */ }
+  }
 
   const toggleTask = (taskStr: string) => {
+    vibrate(10);
     if (completed.includes(taskStr)) {
-      setCompleted(completed.filter(t => t !== taskStr));
+      setCompleted(completed.filter((t) => t !== taskStr));
     } else {
-      const newCompleted = [...completed, taskStr];
-      setCompleted(newCompleted);
-      if (newCompleted.length === dailyTasks.length) {
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 3000);
+      const next = [...completed, taskStr];
+      setCompleted(next);
+      const willAllDone = items.every((it) => next.includes(it.task));
+      if (willAllDone) {
+        vibrate([30, 50, 30]);
+        launchConfetti(110);
+        bumpStreak();
       }
     }
   };
 
-  const progress = Math.round((completed.length / dailyTasks.length) * 100);
+  const addCustomTask = () => {
+    const v = newTask.trim();
+    if (!v) return;
+    if (customTasks.some((t) => t.task === v) || dailyTasks.some((t) => t.task === v)) {
+      setNewTask("");
+      return;
+    }
+    setCustomTasks([...customTasks, { task: v, emoji: "✍️", category: "自定义" }]);
+    setNewTask("");
+    vibrate(12);
+  };
+
+  const removeCustomTask = (taskStr: string) => {
+    setCustomTasks(customTasks.filter((t) => t.task !== taskStr));
+    setCompleted(completed.filter((t) => t !== taskStr));
+  };
+
+  const progress = total > 0 ? Math.round((doneCount / total) * 100) : 0;
 
   return (
     <div>
-      {/* 庆祝动画 */}
-      {showConfetti && (
-        <div class="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-          <div class="text-8xl animate-bounce">🎉</div>
+      {/* 日期 + 连续打卡 */}
+      <div class="flex items-center justify-center gap-3 mb-6 flex-wrap">
+        <div class="inline-flex items-center gap-2 bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm">
+          <span>📅</span>
+          <span class="text-emerald-700 font-medium">{todayStr}</span>
         </div>
-      )}
-      
-      {/* 日期 */}
-      <div class="text-center mb-6">
-        <div class="inline-flex items-center gap-2 bg-white/30 backdrop-blur-sm px-4 py-2 rounded-full">
-          <span class="text-white">📅</span>
-          <span class="text-white font-medium">{todayStr}</span>
+        <div class="inline-flex items-center gap-2 bg-orange-400/90 px-4 py-2 rounded-full shadow">
+          <span>🔥</span>
+          <span class="text-white font-bold">连续 {streak} 天</span>
         </div>
       </div>
-      
+
       {/* 进度条 */}
       <div class="bg-white/90 backdrop-blur-lg rounded-2xl p-4 mb-6 border border-white/50">
         <div class="flex justify-between items-center mb-2">
           <span class="text-emerald-700 font-medium">今日进度</span>
-          <span class="text-emerald-700 font-bold">{completed.length}/{dailyTasks.length}</span>
+          <span class="text-emerald-700 font-bold">{doneCount}/{total}</span>
         </div>
         <div class="h-3 bg-white/60 rounded-full overflow-hidden">
-          <div 
+          <div
             class="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
-        {completed.length === dailyTasks.length && (
+        {allDone && (
           <div class="text-center mt-3 text-green-600 font-bold">
-            ✨ 今日任务全部完成！
+            ✨ 今日任务全部完成！明天继续保持哦
           </div>
         )}
       </div>
-      
+
       {/* 任务列表 */}
       <div class="space-y-4">
-        {dailyTasks.map((task, index) => {
+        {items.map((task, index) => {
           const isCompleted = completed.includes(task.task);
           const colorClass = categoryColors[task.category] || "bg-gray-100 text-gray-600";
-          
+          const isCustom = task.category === "自定义";
           return (
             <div
-              key={index}
+              key={task.task}
               onClick={() => toggleTask(task.task)}
-              class={`bg-white/95 backdrop-blur-xl rounded-2xl p-5 border-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
-                isCompleted 
-                  ? 'border-green-400 shadow-lg' 
-                  : 'border-white/50 shadow-md hover:shadow-lg'
-              }`}
+              class={`bg-white/95 backdrop-blur-xl rounded-2xl p-5 border-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${isCompleted ? "border-green-400 shadow-lg" : "border-white/50 shadow-md hover:shadow-lg"}`}
             >
               <div class="flex items-start gap-4">
-                <div class={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                  isCompleted 
-                    ? 'bg-emerald-500 text-white' 
-                    : 'bg-emerald-100 text-emerald-600'
-                }`}>
-                  {isCompleted ? '✓' : (index + 1)}
+                <div class={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${isCompleted ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-600"}`}>
+                  {isCompleted ? "✓" : index + 1}
                 </div>
-                
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-1">
                     <span class="text-2xl">{task.emoji}</span>
-                    <span class={`text-xs px-2 py-0.5 rounded-full ${colorClass}`}>
-                      {task.category}
-                    </span>
+                    <span class={`text-xs px-2 py-0.5 rounded-full ${colorClass}`}>{task.category}</span>
                   </div>
-                  <p class={`text-lg font-medium transition-all ${
-                    isCompleted ? 'text-gray-400 line-through' : 'text-gray-800'
-                  }`}>
+                  <p class={`text-lg font-medium transition-all ${isCompleted ? "text-gray-400 line-through" : "text-gray-800"}`}>
                     {task.task}
                   </p>
                 </div>
-                
-                {isCompleted && <div class="text-2xl">💖</div>}
+                {isCustom
+                  ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCustomTask(task.task);
+                      }}
+                      class="text-gray-300 hover:text-red-400 text-xl px-1"
+                      title="删除"
+                    >
+                      ×
+                    </button>
+                  )
+                  : (isCompleted && <div class="text-2xl">💖</div>)}
               </div>
             </div>
           );
         })}
       </div>
-      
-      <div class="text-center mt-6 text-white/70 text-sm">
-        <p>💡 明天任务会更新哦，快去完成任务吧！</p>
+
+      {/* 添加自定义任务 */}
+      <div class="bg-white/90 backdrop-blur-lg rounded-2xl p-4 mt-5 border border-white/50">
+        <div class="text-sm text-emerald-700 font-medium mb-2 text-center">✍️ 添加你们专属的小任务</div>
+        <div class="flex gap-2">
+          <input
+            type="text"
+            value={newTask}
+            maxLength={30}
+            onInput={(e) => setNewTask((e.target as HTMLInputElement).value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") addCustomTask();
+            }}
+            placeholder="例如：一起看一集喜欢的剧"
+            class="flex-1 px-4 py-3 rounded-xl border-2 border-emerald-200 focus:border-emerald-400 focus:outline-none text-gray-700"
+          />
+          <button
+            onClick={addCustomTask}
+            class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-5 rounded-xl transition-all active:scale-95"
+          >
+            添加
+          </button>
+        </div>
+      </div>
+
+      <div class="text-center mt-6 text-emerald-700/70 text-sm">
+        <p>💡 每日任务次日自动更新，坚持打卡让感情升温！</p>
       </div>
     </div>
   );

@@ -2,366 +2,310 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>情侣飞行棋</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        :root {
+            --bg-1: #FBE7F0;
+            --bg-2: #F3E1FB;
+            --bg-3: #E3ECFD;
+            --gold: #E0A93B;
+            --rose: #F593B6;
+            --rose-d: #E5739B;
+            --plum: #6b4d7a;
+            --ink: #5a4a6a;
+            --safe-b: env(safe-area-inset-bottom, 0px);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
+            background-attachment: fixed;
             min-height: 100vh;
             overflow-x: hidden;
+            color: var(--ink);
         }
-        
+
         .container {
             max-width: 600px;
             margin: 0 auto;
-            padding: 10px;
+            padding: 10px 10px calc(10px + var(--safe-b));
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-        
+
         .navbar {
-            background: rgba(0,0,0,0.3);
+            background: rgba(255,255,255,0.6);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             padding: 10px 15px;
-            border-radius: 12px;
+            border-radius: 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
+            border: 1px solid rgba(150,120,180,0.15);
+            box-shadow: 0 4px 14px rgba(150,120,180,0.12);
         }
-        
-        .navbar-title { color: #fff; font-size: 16px; font-weight: 600; }
-        .navbar-btn { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
-        
-        /* 棋盘 - 使用CSS Grid */
+        .navbar-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; color: var(--plum); }
+        .navbar-title .ver { font-size: 11px; font-weight: 600; color: var(--rose-d); background: rgba(229,115,155,0.14); padding: 2px 8px; border-radius: 8px; }
+        .navbar-actions { display: flex; gap: 4px; }
+        .navbar-btn {
+            background: rgba(150,120,180,0.12); border: none; color: var(--plum); font-size: 17px;
+            cursor: pointer; width: 36px; height: 36px; border-radius: 10px;
+            display: inline-flex; align-items: center; justify-content: center; transition: all .2s;
+        }
+        .navbar-btn:hover { background: rgba(150,120,180,0.22); transform: translateY(-1px); }
+        .navbar-btn:active { transform: scale(0.92); }
+
+        /* 棋盘 */
         .board {
             flex: 1;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(5, 1fr);
-            gap: 4px;
-            padding: 6px;
+            gap: 5px;
+            padding: 8px;
             min-height: 260px;
             max-width: 100%;
             aspect-ratio: 1;
+            background: rgba(255,255,255,0.45);
+            border-radius: 18px;
+            border: 1px solid rgba(150,120,180,0.15);
+            box-shadow: 0 6px 20px rgba(150,120,180,0.15);
+            position: relative;
         }
-        
+
         .cell {
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
             font-size: 13px;
-            color: #fff;
+            color: var(--ink);
             cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: transform .2s, box-shadow .2s, filter .2s;
+            box-shadow: 0 2px 8px rgba(150,120,180,0.25);
             position: relative;
-        }
-        
-        .cell:hover { transform: scale(1.08); z-index: 5; }
-        
-        .cell.start { background: linear-gradient(135deg, #3498DB, #2980B9); }
-        .cell.end { background: linear-gradient(135deg, #FFD700, #FFA500); color: #333; font-size: 18px; box-shadow: 0 0 15px rgba(255,215,0,0.5); }
-        .cell.normal { background: linear-gradient(135deg, #9B59B6, #8E44AD); }
-        .cell.love { background: linear-gradient(135deg, #E91E63, #C2185B); }
-        .cell.couple { background: linear-gradient(135deg, #FF5722, #D84315); }
-        .cell.advanced { background: linear-gradient(135deg, #00BCD4, #0097A7); }
-        .cell.private { background: linear-gradient(135deg, #9C27B0, #7B1FA2); }
-        .cell.active { animation: pulse 0.8s infinite; box-shadow: 0 0 15px rgba(255,255,255,0.7); }
-        
-        /* 格子图标 */
-        .cell .cell-icon {
-            font-size: 18px;
-            margin-bottom: 2px;
-            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
-        }
-        .cell .cell-num {
-            font-size: 11px;
-            opacity: 0.9;
-            position: absolute;
-            top: 3px;
-            left: 5px;
-        }
-        
-        /* 格子tooltip */
-        .cell::after {
-            content: attr(data-type);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%) scale(0);
-            background: rgba(0,0,0,0.85);
-            color: #fff;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 500;
-            white-space: nowrap;
-            opacity: 0;
-            transition: all 0.2s ease;
-            pointer-events: none;
-            margin-bottom: 5px;
-            z-index: 100;
-        }
-        .cell:hover::after {
-            opacity: 1;
-            transform: translateX(-50%) scale(1);
-        }
-        
-        /* 路径箭头 */
-        .cell .arrow {
-            position: absolute;
-            font-size: 10px;
-            opacity: 0.7;
-            color: rgba(255,255,255,0.8);
-        }
-        .cell .arrow.right { right: 2px; top: 50%; transform: translateY(-50%); }
-        .cell .arrow.down { bottom: 2px; left: 50%; transform: translateX(-50%); }
-        .cell .arrow.left { left: 2px; top: 50%; transform: translateY(-50%); }
-        .cell .arrow.up { top: 2px; left: 50%; transform: translateX(-50%); }
-        
-        /* 星空背景 */
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
             overflow: hidden;
         }
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: white;
-            border-radius: 50%;
-            opacity: 0;
-            animation: twinkle 2s infinite;
-        }
-        @keyframes twinkle {
-            0%, 100% { opacity: 0; transform: scale(0.5); }
-            50% { opacity: 0.8; transform: scale(1); }
-        }
-        
-        @keyframes pulse {
-            0%,100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        /* 中心区域 */
-        .center {
-            grid-column: 2 / 5;
-            grid-row: 2 / 5;
-            background: rgba(255,255,255,0.06);
-            border-radius: 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
+        .cell::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(160deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 55%);
             pointer-events: none;
         }
-        .center-icon { font-size: 32px; }
-        .center-label { color: rgba(255,255,255,0.45); font-size: 13px; }
-        
-        /* 玩家 */
-        .player {
-            position: absolute;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 20;
-            box-shadow: 
-                0 3px 10px rgba(0,0,0,0.4),
-                inset 0 2px 4px rgba(255,255,255,0.3),
-                0 0 0 2px #fff;
+        .cell:hover { transform: scale(1.07); z-index: 5; filter: brightness(1.1); }
+        .cell:active { transform: scale(0.96); }
+
+        .cell.start    { background: linear-gradient(135deg, #AFCBEA, #93B6DC); color: #2f4a66; }
+        .cell.end      { background: linear-gradient(135deg, #FBE08A, #F4CE63); color: #7a5e1e; box-shadow: 0 0 18px rgba(244,206,99,0.5); }
+        .cell.normal   { background: linear-gradient(135deg, #CDBBEC, #B9A3E2); color: #4a3a63; }
+        .cell.love     { background: linear-gradient(135deg, #F8AECB, #F593B6); color: #7a3553; }
+        .cell.couple   { background: linear-gradient(135deg, #FFCBA8, #FFB48E); color: #7a4327; }
+        .cell.advanced { background: linear-gradient(135deg, #A9E7D0, #86D8B9); color: #1f5c47; }
+        .cell.private  { background: linear-gradient(135deg, #DDBDE8, #CCA0DA); color: #5e3568; }
+        .cell.active   { animation: cellPulse 0.9s infinite; box-shadow: 0 0 0 3px rgba(229,115,155,0.7), 0 0 22px rgba(229,115,155,0.45); z-index: 6; }
+        .cell.custom-set::before { background: linear-gradient(160deg, rgba(255,255,255,0.45), rgba(255,255,255,0) 55%); }
+
+        .cell .cell-icon { font-size: 18px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(120,90,140,0.25)); position: relative; }
+        .cell .cell-num  { font-size: 10px; opacity: 0.75; position: absolute; top: 3px; left: 5px; font-weight: 800; }
+        .cell .edit-dot  { position: absolute; bottom: 3px; right: 4px; font-size: 9px; opacity: 0.95; }
+
+        /* tooltip */
+        .cell::after {
+            content: attr(data-type);
+            position: absolute; bottom: 100%; left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: rgba(70,50,80,0.9); color: #fff;
+            padding: 4px 10px; border-radius: 7px; font-size: 11px; font-weight: 600;
+            white-space: nowrap; opacity: 0; transition: all .2s ease;
+            pointer-events: none; margin-bottom: 6px; z-index: 100;
         }
-        .player.male { 
-            background: linear-gradient(135deg, #3498DB, #2980B9);
-            box-shadow: 
-                0 3px 10px rgba(52,152,219,0.5),
-                inset 0 2px 4px rgba(255,255,255,0.3),
-                0 0 0 2px #fff;
-        }
-        .player.female { 
-            background: linear-gradient(135deg, #E91E63, #C2185B);
-            box-shadow: 
-                0 3px 10px rgba(233,30,99,0.5),
-                inset 0 2px 4px rgba(255,255,255,0.3),
-                0 0 0 2px #fff;
-        }
-        .player.moving {
-            animation: bounce 0.5s ease-in-out;
-            z-index: 30;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -60%) scale(1.15); }
-        }
-        
-        /* 骰子区 */
-        .dice-area {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(10px);
+        .cell:hover::after { opacity: 1; transform: translateX(-50%) scale(1); }
+
+        .cell .arrow { position: absolute; font-size: 10px; opacity: 0.6; color: rgba(90,70,110,0.7); }
+        .cell .arrow.right { right: 3px; top: 50%; transform: translateY(-50%); }
+        .cell .arrow.down  { bottom: 3px; left: 50%; transform: translateX(-50%); }
+        .cell .arrow.left  { left: 3px; top: 50%; transform: translateY(-50%); }
+        .cell .arrow.up    { top: 3px; left: 50%; transform: translateX(-50%); }
+
+        /* 星空背景 */
+        .stars { position: fixed; inset: 0; pointer-events: none; z-index: -1; overflow: hidden; }
+        .star { position: absolute; width: 2px; height: 2px; background: rgba(150,110,190,0.55); border-radius: 50%; opacity: 0; animation: twinkle 2s infinite; }
+        @keyframes twinkle { 0%,100% { opacity: 0; transform: scale(0.5); } 50% { opacity: 0.85; transform: scale(1); } }
+        @keyframes cellPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+
+        /* 中心区域 */
+        .center {
+            grid-column: 2 / 5; grid-row: 2 / 5;
+            background: rgba(255,255,255,0.4);
             border-radius: 16px;
-            padding: 15px;
-            text-align: center;
-            margin-top: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+            pointer-events: none; border: 1px dashed rgba(150,120,180,0.25);
         }
-        .turn-text { color: #fff; font-size: 14px; margin-bottom: 8px; }
-        .turn-text b { color: #FFD700; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
-        .dice-wrap { margin-bottom: 10px; }
+        .center-icon { font-size: 34px; animation: heart 1.6s ease-in-out infinite; }
+        @keyframes heart { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        .center-label { color: rgba(110,90,130,0.6); font-size: 13px; font-weight: 600; }
+        .center-mode  { color: var(--rose-d); font-size: 12px; font-weight: 700; }
+
+        /* 玩家棋子 */
+        .player {
+            position: absolute; width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+            transition: left .45s cubic-bezier(0.34, 1.56, 0.64, 1), top .45s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 20;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.3), 0 0 0 2px #fff;
+        }
+        .player.male   { background: linear-gradient(135deg, #3498DB, #2980B9); box-shadow: 0 3px 10px rgba(52,152,219,0.5), inset 0 2px 4px rgba(255,255,255,0.3), 0 0 0 2px #fff; }
+        .player.female { background: linear-gradient(135deg, #E91E63, #C2185B); box-shadow: 0 3px 10px rgba(233,30,99,0.5), inset 0 2px 4px rgba(255,255,255,0.3), 0 0 0 2px #fff; }
+        .player.active-turn { animation: turnGlow 1.2s ease-in-out infinite; }
+        @keyframes turnGlow { 0%,100% { box-shadow: 0 3px 10px rgba(120,90,150,0.35), inset 0 2px 4px rgba(255,255,255,0.3), 0 0 0 2px #fff, 0 0 0 5px rgba(229,115,155,0.3); } 50% { box-shadow: 0 3px 10px rgba(120,90,150,0.35), inset 0 2px 4px rgba(255,255,255,0.3), 0 0 0 2px #fff, 0 0 0 10px rgba(229,115,155,0.08); } }
+        .player.hop { animation: hop .45s ease; z-index: 30; }
+        @keyframes hop { 0%,100% { margin-top: 0; } 45% { margin-top: -10px; } }
+
+        /* 骰子区 */
+        .dice-area { background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 18px; padding: 14px; text-align: center; margin-top: 8px; border: 1px solid rgba(150,120,180,0.14); box-shadow: 0 6px 20px rgba(150,120,180,0.12); }
+        .turn-indicator { display: inline-flex; align-items: center; gap: 7px; background: rgba(150,120,180,0.12); padding: 5px 14px; border-radius: 20px; margin-bottom: 10px; }
+        .turn-indicator .dot { width: 9px; height: 9px; border-radius: 50%; background: #5B9BD5; animation: blink 1.5s infinite; }
+        .turn-indicator .dot.female { background: var(--rose); }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+        .turn-text { font-size: 14px; color: var(--plum); }
+        .turn-text b { color: var(--rose-d); }
+        .dice-wrap { margin-bottom: 12px; }
         .dice {
-            width: 70px;
-            height: 70px;
-            background: linear-gradient(145deg, #fff 0%, #f0f0f0 50%, #e0e0e0 100%);
-            border-radius: 14px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            cursor: pointer;
-            box-shadow: 
-                0 6px 20px rgba(0,0,0,0.3),
-                inset 0 -3px 8px rgba(0,0,0,0.1),
-                inset 0 3px 8px rgba(255,255,255,0.8);
-            transition: all 0.2s;
-            transform-style: preserve-3d;
+            width: 72px; height: 72px;
+            background: linear-gradient(145deg, #fff 0%, #f3eef8 50%, #e4dcef 100%);
+            border-radius: 16px; display: inline-flex; align-items: center; justify-content: center;
+            font-size: 38px; cursor: pointer;
+            box-shadow: 0 6px 20px rgba(150,120,180,0.3), inset 0 -3px 8px rgba(150,120,180,0.12), inset 0 3px 8px rgba(255,255,255,0.9);
+            transition: transform .2s;
         }
-        .dice:hover { transform: translateY(-3px) rotateX(5deg); }
-        .dice.rolling { animation: diceRoll 0.5s ease-in-out; }
+        .dice:hover { transform: translateY(-3px) rotate(-4deg); }
+        .dice:active { transform: scale(0.94); }
+        .dice.rolling { animation: diceRoll 0.5s linear; }
         @keyframes diceRoll {
-            0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
-            25% { transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg); }
-            50% { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg); }
-            75% { transform: rotateX(540deg) rotateY(270deg) rotateZ(135deg); }
-            100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
-        }
-        
-        /* 回合指示器 */
-        .turn-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255,255,255,0.1);
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin-bottom: 8px;
-        }
-        .turn-indicator .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #3498DB;
-            animation: blink 1.5s infinite;
-        }
-        .turn-indicator .dot.female { background: #E91E63; }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+            0%   { transform: rotate(0deg) scale(1); }
+            50%  { transform: rotate(200deg) scale(1.12); }
+            100% { transform: rotate(360deg) scale(1); }
         }
         .roll-btn {
-            background: linear-gradient(135deg,#E91E63,#C2185B);
-            color: #fff;
-            border: none;
-            padding: 10px 35px;
-            font-size: 16px;
-            border-radius: 22px;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 4px 12px rgba(233,30,99,0.35);
+            background: linear-gradient(135deg, var(--rose), var(--rose-d)); color: #fff; border: none;
+            padding: 12px 40px; font-size: 16px; font-weight: 700; border-radius: 24px; cursor: pointer;
+            transition: transform .15s, box-shadow .2s; box-shadow: 0 4px 14px rgba(229,115,155,0.4);
         }
-        .roll-btn:hover:not(:disabled) { transform: translateY(-2px); }
-        .roll-btn:disabled { background: #555; cursor: not-allowed; }
-        
+        .roll-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(229,115,155,0.5); }
+        .roll-btn:active:not(:disabled) { transform: scale(0.96); }
+        .roll-btn:disabled { background: #c9bcd4; cursor: not-allowed; box-shadow: none; }
+
         /* 弹窗 */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.75);
-            z-index: 999;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal.show { display: flex; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(70,50,80,0.45); z-index: 999; align-items: center; justify-content: center; padding: 16px; }
+        .modal.show { display: flex; animation: fadeIn .25s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .modal-box {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 18px;
-            padding: 24px;
-            width: 88%;
-            max-width: 380px;
-            text-align: center;
+            background: linear-gradient(135deg, #FFFFFF, #FFF4FA);
+            color: var(--ink);
+            border-radius: 20px; padding: 22px; width: 100%; max-width: 400px; text-align: center;
+            border: 1px solid rgba(150,120,180,0.15); box-shadow: 0 20px 60px rgba(120,90,150,0.3);
+            animation: popIn .3s cubic-bezier(0.34, 1.56, 0.64, 1); max-height: 88vh; overflow-y: auto;
         }
-        .modal-title { color: #FFD700; font-size: 22px; margin-bottom: 14px; }
+        @keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-title { color: var(--rose-d); font-size: 21px; font-weight: 800; margin-bottom: 16px; }
+
         .mode-list { display: flex; flex-direction: column; gap: 8px; text-align: left; }
         .mode-item {
-            background: rgba(255,255,255,0.08);
-            border: none;
-            padding: 12px 16px;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: rgba(150,120,180,0.08); border: 1px solid rgba(150,120,180,0.08);
+            padding: 13px 16px; border-radius: 12px; color: var(--ink); font-size: 15px; font-weight: 600;
+            cursor: pointer; transition: all .2s; display: flex; justify-content: space-between; align-items: center;
         }
-        .mode-item:hover { background: rgba(255,255,255,0.15); transform: translateX(4px); }
-        .mode-item.active { background: linear-gradient(135deg,#E91E63,#C2185B); }
-        .tag { background: #FFD700; color: #333; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; }
-        .task-box { padding: 18px; background: rgba(255,255,255,0.08); border-radius: 12px; color: #fff; font-size: 17px; line-height: 1.5; margin-bottom: 16px; }
-        .btn-ok { background: linear-gradient(135deg,#3498DB,#2980B9); color: #fff; border: none; padding: 10px 28px; font-size: 15px; border-radius: 18px; cursor: pointer; }
-        .win-emoji { font-size: 52px; }
-        .win-title { color: #FFD700; font-size: 26px; margin-bottom: 8px; }
-        .win-sub { color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 20px; }
-        .btn-restart { background: linear-gradient(135deg,#27AE60,#229954); color: #fff; border: none; padding: 12px 36px; font-size: 16px; border-radius: 22px; cursor: pointer; }
+        .mode-item:hover { background: rgba(150,120,180,0.16); transform: translateX(4px); }
+        .mode-item.active { background: linear-gradient(135deg, var(--rose), var(--rose-d)); border-color: transparent; color: #fff; }
+        .mode-item .m-left { display: flex; align-items: center; gap: 10px; }
+        .mode-item .m-emoji { font-size: 20px; }
+        .mode-item .m-desc { font-size: 11px; opacity: 0.7; font-weight: 500; display: block; margin-top: 2px; }
+        .tag { background: #F4CE63; color: #7a5e1e; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 800; }
+        .tag.custom { background: #6CC2A0; color: #fff; }
+
+        .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+        .btn { flex: 1; border: none; padding: 11px 14px; font-size: 14px; font-weight: 700; border-radius: 14px; cursor: pointer; transition: transform .15s, filter .2s; }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: linear-gradient(135deg, #93B6DC, #6f9bc9); color: #fff; }
+        .btn-edit { background: linear-gradient(135deg, #6CC2A0, #4FB191); color: #fff; }
+        .btn-ghost { background: rgba(150,120,180,0.14); color: var(--plum); }
+        .btn-ok { background: linear-gradient(135deg, #93B6DC, #6f9bc9); color: #fff; border: none; padding: 11px 30px; font-size: 15px; font-weight: 700; border-radius: 18px; cursor: pointer; }
+
+        /* 任务弹窗 */
+        .task-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(150,120,180,0.12); color: var(--plum); padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 700; margin-bottom: 14px; }
+        .task-box { padding: 22px 18px; background: rgba(150,120,180,0.08); color: var(--ink); border-radius: 14px; font-size: 18px; line-height: 1.55; margin-bottom: 18px; min-height: 70px; display: flex; align-items: center; justify-content: center; }
+
+        /* 胜利弹窗 */
+        .win-emoji { font-size: 56px; animation: heart 1.2s ease-in-out infinite; }
+        .win-title { color: var(--rose-d); font-size: 27px; font-weight: 800; margin: 6px 0; }
+        .win-sub { color: rgba(110,90,130,0.75); font-size: 14px; margin-bottom: 20px; }
+        .btn-restart { background: linear-gradient(135deg, #6CC2A0, #4FB191); color: #fff; border: none; padding: 13px 40px; font-size: 16px; font-weight: 700; border-radius: 24px; cursor: pointer; transition: transform .15s; }
+        .btn-restart:active { transform: scale(0.96); }
+
+        /* 自定义编辑器 */
+        .edit-hint { font-size: 12px; color: rgba(110,90,130,0.7); margin-bottom: 14px; line-height: 1.5; }
+        .edit-list { display: flex; flex-direction: column; gap: 10px; text-align: left; margin-bottom: 8px; }
+        .edit-row { display: flex; align-items: center; gap: 8px; }
+        .edit-label { flex-shrink: 0; width: 56px; font-size: 12px; font-weight: 700; color: var(--plum); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .edit-label .e-icon { font-size: 16px; }
+        .edit-label .e-num { font-size: 10px; opacity: 0.6; }
+        .edit-input {
+            flex: 1; background: rgba(150,120,180,0.08); border: 1px solid rgba(150,120,180,0.18);
+            border-radius: 10px; padding: 10px 12px; color: var(--ink); font-size: 14px; outline: none; transition: border-color .2s;
+            font-family: inherit;
+        }
+        .edit-input:focus { border-color: var(--rose); background: rgba(150,120,180,0.12); }
+        .edit-input::placeholder { color: rgba(110,90,130,0.4); }
+        .saved-toast {
+            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: rgba(108,194,160,0.96); color: #fff; padding: 10px 22px; border-radius: 22px;
+            font-size: 14px; font-weight: 700; z-index: 1200; opacity: 0; transition: all .3s; pointer-events: none;
+            box-shadow: 0 6px 20px rgba(120,90,150,0.4);
+        }
+        .saved-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* 撒花 */
+        .confetti-piece { position: fixed; top: -16px; width: 10px; height: 14px; z-index: 1100; pointer-events: none; will-change: transform; border-radius: 2px; }
 
         @media (min-width: 768px) {
             .container { max-width: 600px; padding: 15px; }
-            .board { min-height: 400px; gap: 8px; }
-            .cell { font-size: 16px; border-radius: 12px; }
+            .board { min-height: 420px; gap: 8px; }
+            .cell { font-size: 16px; border-radius: 14px; }
             .cell .cell-icon { font-size: 24px; }
             .cell .cell-num { font-size: 12px; }
             .player { width: 40px; height: 40px; font-size: 20px; }
-            .dice { width: 90px; height: 90px; font-size: 46px; }
-            .center-icon { font-size: 48px; }
+            .dice { width: 92px; height: 92px; font-size: 48px; }
+            .center-icon { font-size: 50px; }
         }
         @media (max-width: 380px) {
             .board { gap: 3px; padding: 5px; min-height: 240px; }
-            .cell { font-size: 10px; border-radius: 6px; }
+            .cell { font-size: 10px; border-radius: 8px; }
             .cell .cell-icon { font-size: 14px; }
             .cell .cell-num { font-size: 8px; top: 2px; left: 3px; }
             .cell .arrow { font-size: 8px; }
             .player { width: 22px; height: 22px; font-size: 11px; }
-            .dice { width: 55px; height: 55px; font-size: 28px; }
+            .dice { width: 56px; height: 56px; font-size: 28px; }
             .navbar-title { font-size: 14px; }
-            .center-icon { font-size: 24px; }
+            .center-icon { font-size: 26px; }
             .center-label { font-size: 11px; }
         }
     </style>
 </head>
 <body>
-<!-- 星空背景 -->
 <div class="stars" id="stars"></div>
 <div class="container">
     <div class="navbar">
-        <div class="navbar-title">💕 情侣飞行棋 <span id="ver">v3.0</span></div>
-        <button class="navbar-btn" onclick="openModal('modeModal')">⚙️</button>
+        <div class="navbar-title">💕 情侣飞行棋 <span class="ver" id="ver">基础模式</span></div>
+        <div class="navbar-actions">
+            <button class="navbar-btn" title="重新开始" onclick="restartGame(true)">🔄</button>
+            <button class="navbar-btn" title="设置" onclick="openModal('modeModal')">⚙️</button>
+        </div>
     </div>
 
     <div class="board" id="board"></div>
@@ -381,15 +325,19 @@
     <div class="modal-box">
         <div class="modal-title">选择游戏模式</div>
         <div class="mode-list" id="modeList"></div>
+        <div class="modal-actions">
+            <button class="btn btn-edit" onclick="openEditor()">✏️ 编辑自定义内容</button>
+            <button class="btn btn-ghost" onclick="closeModal('modeModal')">关闭</button>
+        </div>
     </div>
 </div>
 
 <!-- 任务弹窗 -->
 <div class="modal" id="taskModal">
     <div class="modal-box">
-        <div class="modal-title">✨ 任务</div>
+        <div class="task-badge" id="taskBadge">✨ 任务</div>
         <div class="task-box" id="taskText"></div>
-        <button class="btn-ok" onclick="closeModal('taskModal')">知道了</button>
+        <button class="btn-ok" onclick="closeModal('taskModal')">知道了 ✓</button>
     </div>
 </div>
 
@@ -398,104 +346,129 @@
     <div class="modal-box">
         <div class="win-emoji">🎉</div>
         <div class="win-title" id="winTitle">男方胜利!</div>
-        <div class="win-sub">可以要求对方做任何事情~</div>
-        <button class="btn-restart" onclick="restartGame()">再来一局</button>
+        <div class="win-sub">恭喜抵达终点，可以向对方提出一个小心愿~</div>
+        <button class="btn-restart" onclick="restartGame()">再来一局 🔁</button>
     </div>
 </div>
+
+<!-- 自定义编辑器 -->
+<div class="modal" id="editModal">
+    <div class="modal-box">
+        <div class="modal-title">✏️ 自定义飞行棋</div>
+        <div class="edit-hint">为每个格子填写你们专属的任务内容，留空将使用默认提示。内容自动保存在本机，下次打开依然保留。</div>
+        <div class="edit-list" id="editList"></div>
+        <div class="modal-actions">
+            <button class="btn btn-edit" onclick="saveCustom()">💾 保存并使用</button>
+            <button class="btn btn-ghost" onclick="resetCustom()">清空</button>
+        </div>
+    </div>
+</div>
+
+<div class="saved-toast" id="toast"></div>
 
 <script>
 // ========== 游戏模式 ==========
 const MODES = {
-    1: { name: '基础模式', tasks: ['给彼此一个拥抱','说一句甜言蜜语','互相按摩5分钟','一起做深呼吸','分享今天最开心的事','给对方一个吻','手牵手一分钟','对视30秒','说一句我爱你','分享一个小秘密','给对方捶背','一起喝水','互相夸奖对方','做一个鬼脸','模仿动物叫声','分享一个笑话'] },
-    2: { name: '恋爱版', tasks: ['深情拥抱一分钟','额头轻轻一吻','说三句不同语言的我爱你','分享第一次见面的感受','为对方唱一首歌','说出对方的三个优点','互相喂食一块水果','一起自拍一张','模仿对方的口头禅','给彼此起专属昵称','分享未来三年愿望','背靠背坐着','为对方揉肩膀','说句肉麻情话','做同一个动作','分享最近心动'] },
-    3: { name: '情侣版', tasks: ['公主抱对方5秒','深情对视一分钟','为对方做一件小事','分享最爱对方的一点','手牵手不说话','给对方惊喜','说最幸福的事','互相整理头发','做个小游戏','分享甜蜜回忆','为对方捶腿','说承诺的话','模仿对方生气样子','想一起去的地方','做晚餐计划','给温暖拥抱'] },
-    4: { name: '高级版', tasks: ['法式深吻30秒','按摩全身','泡热水澡','分享私密想法','涂身体乳','看浪漫电影','准备礼物','跳一支舞','分享心动时刻','互相服务','做SPA','最深渴望','尝试新姿势','特别晚餐','洗鸳鸯浴','浪漫一晚'] },
-    5: { name: '私密版', tasks: ['热吻一分钟','全身按摩','探索敏感带','狂野幻想','角色扮演','小玩具','服务对方','新地点','私密愿望','泡泡浴','束缚游戏','口交','后入式','满足需求','激情一晚','任何事'] },
-    6: { name: '组合模式', tasks: ['奇数拥抱偶数亲','轮流服务','完成小挑战','决定亲密程度','喂食接吻','做运动','谁主动','保密秘密','满足愿望','做什么','创造回忆','姿势','探索','时间长短','达到巅峰','自由发挥'] }
+    1: { name: '基础模式', emoji: '🌱', desc: '轻松互动，适合初识', tasks: ['给彼此一个拥抱','说一句甜言蜜语','互相按摩5分钟','一起做深呼吸','分享今天最开心的事','给对方一个吻','手牵手一分钟','对视30秒','说一句我爱你','分享一个小秘密','给对方捶背','一起喝水','互相夸奖对方','做一个鬼脸','模仿动物叫声','分享一个笑话'] },
+    2: { name: '恋爱版', emoji: '💞', desc: '甜蜜升温，心动加倍', tasks: ['深情拥抱一分钟','额头轻轻一吻','说三句不同语言的我爱你','分享第一次见面的感受','为对方唱一首歌','说出对方的三个优点','互相喂食一块水果','一起自拍一张','模仿对方的口头禅','给彼此起专属昵称','分享未来三年愿望','背靠背坐着','为对方揉肩膀','说句肉麻情话','做同一个动作','分享最近心动'] },
+    3: { name: '情侣版', emoji: '👫', desc: '默契挑战，更进一步', tasks: ['公主抱对方5秒','深情对视一分钟','为对方做一件小事','分享最爱对方的一点','手牵手不说话','给对方一个惊喜','说最幸福的事','互相整理头发','做个小游戏','分享甜蜜回忆','为对方捶腿','说一句承诺的话','模仿对方生气样子','说想一起去的地方','一起做晚餐计划','给一个温暖拥抱'] },
+    4: { name: '高级版', emoji: '🔥', desc: '亲密升级，浪漫私享', tasks: ['法式深吻30秒','为对方按摩肩颈','一起泡热水','分享私密想法','为对方涂身体乳','看一段浪漫视频','准备一个小礼物','一起跳一支慢舞','分享心动时刻','互相服务一分钟','做个迷你SPA','说出最深的渴望','尝试一个新拥抱','计划一次特别晚餐','一起洗手','安排浪漫一晚'] },
+    5: { name: '私密版', emoji: '💋', desc: '尺度较大，请谨慎选择', tasks: ['热吻一分钟','全身轻抚按摩','探索敏感部位','分享狂野幻想','来一段角色扮演','使用小道具','为对方服务','换个新地点','说出私密愿望','一起泡泡浴','尝试束缚游戏','深情亲吻','拥抱亲密接触','满足对方需求','享受激情一晚','由对方决定'] },
+    6: { name: '组合模式', emoji: '🎲', desc: '随机混搭，惊喜不断', tasks: ['奇数拥抱偶数亲吻','轮流为对方服务','完成一个小挑战','由骰子决定亲密程度','互相喂食并接吻','一起做个运动','猜拳决定谁主动','保守一个甜蜜秘密','满足一个小愿望','让对方决定做什么','一起创造一个回忆','尝试一个新拥抱','探索一个新话题','由对方决定时间长短','一起达到默契巅峰','自由发挥'] }
 };
 
-// ========== 棋盘布局 ==========
-// 5列 x 5行，外圈顺时针螺旋，中心装饰
-//
-//    0  1  2  3  4
-// 0 [★][1][2][3][4]  ← 终点★在左上角，上边 1-4
-// 1 [  ][ ][ ][ ][5]   ← 5在右边
-// 2 [15][ ][💕][ ][6]   ← 15在左边，6在右边
-// 3 [14][ ][ ][ ][7]   ← 14在左边，7在右边
-// 4 [13][12][11][10][9] ← 下边 9-13 (右→左)
-// 路径: ★→1→2→3→4→5→6→7→8→9→10→11→12→13→14→15→★
+const STORE = { mode: 'fxq_mode', custom: 'fxq_custom_tasks' };
 
+// ========== 棋盘布局（5x5 外圈顺时针）==========
 const CELLS = [
-    // 终点★在左上角(col=0,row=0)，起点1在右边
-    {id:1,c:1,r:0,t:'start'}, {id:2,c:2,r:0,t:'normal'}, {id:3,c:3,r:0,t:'love'}, 
-    {id:4,c:4,r:0,t:'normal'},   // 上边 1-4 (col=1-4)
-    {id:5,c:4,r:1,t:'couple'}, {id:6,c:4,r:2,t:'advanced'}, {id:7,c:4,r:3,t:'private'}, // 右边 5-7
-    {id:8,c:4,r:4,t:'love'}, {id:9,c:3,r:4,t:'normal'}, {id:10,c:2,r:4,t:'couple'},   // 下边 8-10
-    {id:11,c:1,r:4,t:'advanced'}, {id:12,c:0,r:4,t:'private'}, // 下边 11-12
-    {id:13,c:0,r:3,t:'normal'}, {id:14,c:0,r:2,t:'love'}, {id:15,c:0,r:1,t:'private'}, // 左边 13-15
-    {id:16,c:0,r:0,t:'end'}   // 终点 ★ (左上角col=0,row=0)
+    {id:1,c:1,r:0,t:'start'}, {id:2,c:2,r:0,t:'normal'}, {id:3,c:3,r:0,t:'love'},
+    {id:4,c:4,r:0,t:'normal'},
+    {id:5,c:4,r:1,t:'couple'}, {id:6,c:4,r:2,t:'advanced'}, {id:7,c:4,r:3,t:'private'},
+    {id:8,c:4,r:4,t:'love'}, {id:9,c:3,r:4,t:'normal'}, {id:10,c:2,r:4,t:'couple'},
+    {id:11,c:1,r:4,t:'advanced'}, {id:12,c:0,r:4,t:'private'},
+    {id:13,c:0,r:3,t:'normal'}, {id:14,c:0,r:2,t:'love'}, {id:15,c:0,r:1,t:'private'},
+    {id:16,c:0,r:0,t:'end'}
 ];
+const TASK_CELLS = CELLS.filter(c => c.t !== 'start' && c.t !== 'end'); // id 2~15
+const LAST = 16;
+
+const CELL_TYPES = {
+    start:    { name: '起点', icon: '🚀' },
+    end:      { name: '终点', icon: '🏆' },
+    normal:   { name: '普通', icon: '✨' },
+    love:     { name: '甜蜜', icon: '💕' },
+    couple:   { name: '情侣', icon: '👫' },
+    advanced: { name: '高级', icon: '🔥' },
+    private:  { name: '私密', icon: '💋' }
+};
+
+const PATH_ARROWS = {
+    1:{char:'→',cls:'right'},2:{char:'→',cls:'right'},3:{char:'→',cls:'right'},
+    4:{char:'↓',cls:'down'},5:{char:'↓',cls:'down'},6:{char:'↓',cls:'down'},7:{char:'↓',cls:'down'},
+    8:{char:'←',cls:'left'},9:{char:'←',cls:'left'},10:{char:'←',cls:'left'},11:{char:'←',cls:'left'},
+    12:{char:'↑',cls:'up'},13:{char:'↑',cls:'up'},14:{char:'↑',cls:'up'},15:{char:'↖',cls:'up'}
+};
 
 // ========== 状态 ==========
 const state = { mode: 1, malePos: 1, femalePos: 1, turn: 'male', rolling: false, over: false };
+let customTasks = {}; // { id: text }
+
+// ========== 存储 ==========
+function loadStore() {
+    try {
+        const m = localStorage.getItem(STORE.mode);
+        if (m === 'custom') state.mode = 'custom';
+        else if (m && MODES[m]) state.mode = +m;
+        const c = localStorage.getItem(STORE.custom);
+        if (c) customTasks = JSON.parse(c) || {};
+    } catch (e) { /* localStorage 不可用时静默降级 */ }
+}
+function saveMode() { try { localStorage.setItem(STORE.mode, String(state.mode)); } catch (e) {} }
+function saveCustomStore() { try { localStorage.setItem(STORE.custom, JSON.stringify(customTasks)); } catch (e) {} }
 
 // ========== 初始化 ==========
 function init() {
+    loadStore();
     createStars();
     renderModes();
     buildBoard();
     createPlayers();
     updatePositions();
+    updateTurnIndicator();
+    updateModeLabel();
+}
+
+function modeName(m) { return m === 'custom' ? '自定义模式' : MODES[m].name; }
+
+function updateModeLabel() {
+    $('#ver').textContent = modeName(state.mode);
+    const cm = $('#centerMode');
+    if (cm) cm.textContent = modeName(state.mode);
 }
 
 function renderModes() {
-    const list = document.getElementById('modeList');
+    const list = $('#modeList');
     list.innerHTML = '';
     Object.entries(MODES).forEach(([k, v]) => {
         const btn = document.createElement('button');
-        btn.className = `mode-item${k==1?' active':''}`;
+        btn.className = `mode-item${state.mode == k ? ' active' : ''}`;
         btn.dataset.mode = k;
-        btn.innerHTML = `<span>${v.name}</span>${k>1?'<span class="tag">HOT</span>':''}`;
+        btn.innerHTML = `<span class="m-left"><span class="m-emoji">${v.emoji}</span><span>${v.name}<span class="m-desc">${v.desc}</span></span></span>${k > 1 ? '<span class="tag">HOT</span>' : ''}`;
         btn.onclick = () => selectMode(+k);
         list.appendChild(btn);
     });
+    // 自定义模式入口
+    const cbtn = document.createElement('button');
+    cbtn.className = `mode-item${state.mode === 'custom' ? ' active' : ''}`;
+    cbtn.dataset.mode = 'custom';
+    cbtn.innerHTML = `<span class="m-left"><span class="m-emoji">✏️</span><span>自定义模式<span class="m-desc">由你们亲手设计每个格子</span></span></span><span class="tag custom">DIY</span>`;
+    cbtn.onclick = () => selectCustomMode();
+    list.appendChild(cbtn);
 }
 
-// 格子类型配置
-const CELL_TYPES = {
-    start: { name: '起点', icon: '🚀' },
-    end: { name: '终点', icon: '🏆' },
-    normal: { name: '普通', icon: '✨' },
-    love: { name: '甜蜜', icon: '💕' },
-    couple: { name: '情侣', icon: '👫' },
-    advanced: { name: '高级', icon: '🔥' },
-    private: { name: '私密', icon: '💋' }
-};
-
-// 路径方向配置
-const PATH_ARROWS = {
-    1: { char: '→', cls: 'right' }, // 1→2
-    2: { char: '→', cls: 'right' }, // 2→3
-    3: { char: '→', cls: 'right' }, // 3→4
-    4: { char: '↓', cls: 'down' },  // 4→5
-    5: { char: '↓', cls: 'down' },  // 5→6
-    6: { char: '↓', cls: 'down' }, // 6→7
-    7: { char: '↓', cls: 'down' }, // 7→8
-    8: { char: '←', cls: 'left' },  // 8→9
-    9: { char: '←', cls: 'left' },  // 9→10
-    10: { char: '←', cls: 'left' }, // 10→11
-    11: { char: '←', cls: 'left' }, // 11→12
-    12: { char: '↑', cls: 'up' },   // 12→13
-    13: { char: '↑', cls: 'up' },   // 13→14
-    14: { char: '↑', cls: 'up' },   // 14→15
-    15: { char: '↖', cls: 'up' }    // 15→★(终点)
-};
-
 function buildBoard() {
-    const board = document.getElementById('board');
+    const board = $('#board');
     board.innerHTML = '';
-    
-    // 格子
     CELLS.forEach(d => {
         const el = document.createElement('div');
         el.className = `cell ${d.t}`;
@@ -503,86 +476,72 @@ function buildBoard() {
         el.style.gridColumn = d.c + 1;
         el.style.gridRow = d.r + 1;
         el.dataset.type = CELL_TYPES[d.t].name;
-        
-        // 格子内容
-        const icon = d.t === 'end' ? '🏆' : CELL_TYPES[d.t].icon;
+        const icon = CELL_TYPES[d.t].icon;
         const num = d.t === 'end' ? '★' : d.id;
-        const arrowData = PATH_ARROWS[d.id];
-        const arrow = arrowData ? `<span class="arrow ${arrowData.cls}">${arrowData.char}</span>` : '';
-        
-        el.innerHTML = `
-            <span class="cell-num">${num}</span>
-            <span class="cell-icon">${icon}</span>
-            ${arrow}
-        `;
-        el.onclick = () => showTask(d.id);
+        const a = PATH_ARROWS[d.id];
+        const arrow = a ? `<span class="arrow ${a.cls}">${a.char}</span>` : '';
+        const hasCustom = state.mode === 'custom' && customTasks[d.id];
+        if (hasCustom) el.classList.add('custom-set');
+        const dot = hasCustom ? '<span class="edit-dot">📝</span>' : '';
+        el.innerHTML = `<span class="cell-num">${num}</span><span class="cell-icon">${icon}</span>${arrow}${dot}`;
+        el.onclick = () => showTask(d.id, true);
         board.appendChild(el);
     });
-    
-    // 中心
     const center = document.createElement('div');
     center.className = 'center';
-    center.innerHTML = '<div class="center-icon">💕</div><div class="center-label">情侣飞行棋</div>';
+    center.innerHTML = `<div class="center-icon">💕</div><div class="center-label">情侣飞行棋</div><div class="center-mode" id="centerMode">${modeName(state.mode)}</div>`;
     board.appendChild(center);
 }
 
-// 生成星空背景
 function createStars() {
-    const starsContainer = document.getElementById('stars');
-    if (!starsContainer) return;
-    
-    const count = 50;
-    for (let i = 0; i < count; i++) {
-        const star = document.createElement('div');
-        star.className = 'star';
-        star.style.left = Math.random() * 100 + '%';
-        star.style.top = Math.random() * 100 + '%';
-        star.style.animationDelay = Math.random() * 2 + 's';
-        star.style.animationDuration = (1.5 + Math.random()) + 's';
-        
-        // 随机大小
+    const c = $('#stars');
+    if (!c) return;
+    for (let i = 0; i < 50; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        s.style.left = Math.random() * 100 + '%';
+        s.style.top = Math.random() * 100 + '%';
+        s.style.animationDelay = Math.random() * 2 + 's';
+        s.style.animationDuration = (1.5 + Math.random()) + 's';
         const size = 1 + Math.random() * 2;
-        star.style.width = size + 'px';
-        star.style.height = size + 'px';
-        
-        starsContainer.appendChild(star);
+        s.style.width = s.style.height = size + 'px';
+        c.appendChild(s);
     }
 }
 
 function createPlayers() {
-    const board = document.getElementById('board');
+    const board = $('#board');
     ['male','female'].forEach(g => {
         const p = document.createElement('div');
         p.className = `player ${g}`;
         p.id = `p${g}`;
-        p.textContent = g==='male'?'👨':'👩';
+        p.textContent = g === 'male' ? '👨' : '👩';
         board.appendChild(p);
     });
 }
 
 // ========== 位置更新 ==========
-function updatePositions(animate = false) {
-    const board = document.getElementById('board');
+function updatePositions(hop = false) {
+    const board = $('#board');
     if (!board) return;
     const br = board.getBoundingClientRect();
-    
     [{key:'male',pos:state.malePos},{key:'female',pos:state.femalePos}].forEach(({key,pos}) => {
-        const cell = document.getElementById(`c${pos}`);
-        const player = document.getElementById(`p${key}`);
+        const cell = $(`#c${pos}`);
+        const player = $(`#p${key}`);
         if (!cell || !player) return;
         const cr = cell.getBoundingClientRect();
         const same = state.malePos === state.femalePos;
-        const ox = same ? (key==='male'?-8:8) : 0;
-        const oy = same ? (key==='male'?-8:8) : 0;
+        const ox = same ? (key === 'male' ? -9 : 9) : 0;
+        const oy = same ? (key === 'male' ? -9 : 9) : 0;
         const size = player.offsetWidth / 2;
-        
-        player.style.left = (cr.left - br.left + cr.width/2 - size + ox) + 'px';
-        player.style.top = (cr.top - br.top + cr.height/2 - size + oy) + 'px';
-        
-        // 添加移动动画
-        if (animate) {
-            player.classList.add('moving');
-            setTimeout(() => player.classList.remove('moving'), 500);
+        player.style.left = (cr.left - br.left + cr.width / 2 - size + ox) + 'px';
+        player.style.top  = (cr.top - br.top + cr.height / 2 - size + oy) + 'px';
+        player.classList.toggle('active-turn', !state.over && key === state.turn);
+        if (hop && key === state.turn) {
+            player.classList.remove('hop');
+            void player.offsetWidth;
+            player.classList.add('hop');
+            setTimeout(() => player.classList.remove('hop'), 460);
         }
     });
 }
@@ -592,113 +551,235 @@ function rollDice() {
     if (state.rolling || state.over) return;
     state.rolling = true;
     $('#rollBtn').disabled = true;
-    
+    vibrate(15);
     const dice = $('#dice');
     dice.classList.add('rolling');
-    
+    const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
     let n = 0;
     const iv = setInterval(() => {
-        dice.textContent = ['⚀','⚁','⚂','⚃','⚄','⚅'][Math.floor(Math.random()*6)];
-        if (++n >= 12) {
+        dice.textContent = faces[Math.floor(Math.random() * 6)];
+        if (++n >= 10) {
             clearInterval(iv);
             dice.classList.remove('rolling');
-            const result = Math.floor(Math.random()*6)+1;
-            dice.textContent = ['⚀','⚁','⚂','⚃','⚄','⚅'][result-1];
+            const result = Math.floor(Math.random() * 6) + 1;
+            dice.textContent = faces[result - 1];
             movePlayer(result);
         }
-    }, 80);
+    }, 70);
 }
 
 function movePlayer(steps) {
     const isMale = state.turn === 'male';
     let pos = isMale ? state.malePos : state.femalePos;
-    const target = Math.min(pos + steps, 16);
     let step = 0;
-    
     const iv = setInterval(() => {
         pos++;
         step++;
         if (isMale) state.malePos = pos; else state.femalePos = pos;
-        updatePositions(true); // 添加动画
+        updatePositions(true);
         highlight(pos);
-        
-        if (step >= steps || pos >= 16) {
+        vibrate(8);
+        if (step >= steps || pos >= LAST) {
             clearInterval(iv);
-            checkWin();
+            setTimeout(checkWin, 350);
         }
-    }, 280);
+    }, 300);
 }
 
 function highlight(id) {
-    document.querySelectorAll('.cell').forEach(c=>c.classList.remove('active'));
-    const el = document.getElementById(`c${id}`);
+    document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+    const el = $(`#c${id}`);
     if (el) el.classList.add('active');
 }
 
 function checkWin() {
     const pos = state.turn === 'male' ? state.malePos : state.femalePos;
-    if (pos >= 16) {
+    if (pos >= LAST) {
         state.over = true;
-        $('#winTitle').textContent = (state.turn==='male'?'男方':'女方') + '胜利!';
+        updatePositions();
+        $('#winTitle').textContent = (state.turn === 'male' ? '男方' : '女方') + '胜利!';
+        vibrate([40, 60, 40, 60, 120]);
+        launchConfetti();
         openModal('winModal');
     } else {
-        setTimeout(() => showTask(pos), 400);
+        showTask(pos, false);
         state.turn = state.turn === 'male' ? 'female' : 'male';
         updateTurnIndicator();
+        updatePositions();
         state.rolling = false;
         $('#rollBtn').disabled = false;
     }
 }
 
-// 更新回合指示器
 function updateTurnIndicator() {
     $('#curPlayer').textContent = state.turn === 'male' ? '男方' : '女方';
-    const dot = $('#turnDot');
-    dot.className = 'dot ' + (state.turn === 'male' ? '' : 'female');
+    $('#turnDot').className = 'dot ' + (state.turn === 'male' ? '' : 'female');
 }
 
-// ========== 任务 & 弹窗 ==========
-function showTask(id) {
-    if (id === 1 || id === 16) return;
-    const mode = MODES[state.mode];
-    const task = mode.tasks[(id - 2) % mode.tasks.length];
-    $('#taskText').textContent = task;
+// ========== 任务 ==========
+function getTaskForCell(id) {
+    if (id === 1 || id === LAST) return null;
+    if (state.mode === 'custom') {
+        return customTasks[id] || '（这个格子还没有内容，点击 ⚙️ → 编辑自定义内容来填写吧）';
+    }
+    const tasks = MODES[state.mode].tasks;
+    return tasks[(id - 2) % tasks.length];
+}
+
+function showTask(id, preview) {
+    const cellData = CELLS.find(c => c.id === id);
+    if (!cellData) return;
+    if (id === 1 || id === LAST) {
+        if (preview) {
+            const t = CELL_TYPES[cellData.t];
+            $('#taskBadge').textContent = `${t.icon} ${id === 1 ? '起点' : '终点'}`;
+            $('#taskText').textContent = id === 1 ? '游戏从这里出发，掷骰子前进吧！' : '抵达终点即可获胜，赢家可以提出一个小心愿~';
+            openModal('taskModal');
+        }
+        return;
+    }
+    const t = CELL_TYPES[cellData.t];
+    $('#taskBadge').textContent = `${t.icon} ${t.name} · 第${id}格`;
+    $('#taskText').textContent = getTaskForCell(id);
     openModal('taskModal');
 }
 
+// ========== 弹窗 ==========
 function openModal(id) { $(`#${id}`).classList.add('show'); }
 function closeModal(id) { $(`#${id}`).classList.remove('show'); }
 
 function selectMode(m) {
     state.mode = m;
-    $('#ver').textContent = MODES[m].name;
-    document.querySelectorAll('.mode-item').forEach(i=>i.classList.toggle('active', i.dataset.mode == String(m)));
+    saveMode();
+    syncModeUI();
     closeModal('modeModal');
     restartGame();
 }
 
-function restartGame() {
+function selectCustomMode() {
+    const hasAny = Object.values(customTasks).some(v => v && v.trim());
+    if (!hasAny) {
+        closeModal('modeModal');
+        openEditor();
+        toast('请先填写自定义内容~');
+        return;
+    }
+    state.mode = 'custom';
+    saveMode();
+    syncModeUI();
+    closeModal('modeModal');
+    restartGame();
+}
+
+function syncModeUI() {
+    document.querySelectorAll('.mode-item').forEach(i => i.classList.toggle('active', String(i.dataset.mode) === String(state.mode)));
+    updateModeLabel();
+    buildBoard();
+    createPlayers();
+    updatePositions();
+}
+
+function restartGame(confirmReset) {
+    if (confirmReset && (state.malePos > 1 || state.femalePos > 1) && !state.over) {
+        if (!confirm('确定要重新开始本局吗？')) return;
+    }
     state.malePos = 1;
     state.femalePos = 1;
     state.turn = 'male';
     state.rolling = false;
     state.over = false;
     $('#rollBtn').disabled = false;
+    $('#dice').textContent = '🎲';
     closeModal('winModal');
-    document.querySelectorAll('.cell').forEach(c=>c.classList.remove('active'));
+    document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
     updateTurnIndicator();
     updatePositions();
 }
 
+// ========== 自定义编辑器 ==========
+function openEditor() {
+    closeModal('modeModal');
+    const list = $('#editList');
+    list.innerHTML = '';
+    TASK_CELLS.forEach(d => {
+        const t = CELL_TYPES[d.t];
+        const row = document.createElement('div');
+        row.className = 'edit-row';
+        const def = MODES[1].tasks[(d.id - 2) % MODES[1].tasks.length];
+        row.innerHTML = `
+            <span class="edit-label"><span class="e-icon">${t.icon}</span><span class="e-num">第${d.id}格</span></span>
+            <input class="edit-input" data-id="${d.id}" maxlength="60" placeholder="例如：${def}" value="${escapeAttr(customTasks[d.id] || '')}">
+        `;
+        list.appendChild(row);
+    });
+    openModal('editModal');
+}
+
+function saveCustom() {
+    const next = {};
+    document.querySelectorAll('#editList .edit-input').forEach(inp => {
+        const v = inp.value.trim();
+        if (v) next[inp.dataset.id] = v;
+    });
+    customTasks = next;
+    saveCustomStore();
+    state.mode = 'custom';
+    saveMode();
+    syncModeUI();
+    closeModal('editModal');
+    restartGame();
+    toast('已保存，开始自定义飞行棋吧！');
+}
+
+function resetCustom() {
+    if (!confirm('确定清空所有自定义内容吗？')) return;
+    customTasks = {};
+    saveCustomStore();
+    document.querySelectorAll('#editList .edit-input').forEach(inp => { inp.value = ''; });
+    toast('已清空');
+}
+
 // ========== 工具 ==========
 function $(s) { return document.querySelector(s); }
+function vibrate(p) { if (navigator.vibrate) try { navigator.vibrate(p); } catch (e) {} }
+function escapeAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-// 点击外部关闭
+let toastTimer;
+function toast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function launchConfetti() {
+    const colors = ['#FFD700','#E91E63','#3498DB','#27AE60','#FF7043','#AB47BC','#fff'];
+    for (let i = 0; i < 80; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-piece';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        p.style.opacity = '0.9';
+        const dur = 2.2 + Math.random() * 1.8;
+        const delay = Math.random() * 0.6;
+        const xEnd = (Math.random() - 0.5) * 240;
+        const rot = (Math.random() * 720 - 360);
+        p.animate([
+            { transform: `translate(0,0) rotate(0deg)`, opacity: 1 },
+            { transform: `translate(${xEnd}px, 105vh) rotate(${rot}deg)`, opacity: 0.9 }
+        ], { duration: dur * 1000, delay: delay * 1000, easing: 'cubic-bezier(0.25,0.6,0.5,1)' });
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), (dur + delay) * 1000 + 200);
+    }
+}
+
+// 点击遮罩关闭（胜利弹窗除外）
 document.querySelectorAll('.modal').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m && m.id !== 'winModal') closeModal(m.id); });
 });
 
-window.addEventListener('resize', updatePositions);
+window.addEventListener('resize', () => updatePositions());
 
 init();
 </script>

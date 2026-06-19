@@ -11,24 +11,24 @@ export default function Card_version() {
 				<script src="/card_version.js"></script>
 			</Head>
 
-			<div class="min-h-screen w-full relative overflow-hidden" style="background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 50%, #EC4899 100%)">
+			<div class="min-h-screen w-full relative overflow-hidden" style="background: linear-gradient(160deg, #FCE3EF 0%, #F4DCF7 50%, #E6DCFB 100%)">
 				{/* 装饰元素 */}
-				<div class="absolute top-20 right-10 w-32 h-32 bg-purple-300/20 rounded-full blur-3xl animate-pulse"></div>
-				<div class="absolute bottom-40 left-10 w-40 h-40 bg-yellow-300/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: '0.7s'}}></div>
+				<div class="absolute top-20 right-10 w-32 h-32 bg-purple-200/40 rounded-full blur-3xl animate-pulse"></div>
+				<div class="absolute bottom-40 left-10 w-40 h-40 bg-pink-200/40 rounded-full blur-3xl animate-pulse" style={{animationDelay: '0.7s'}}></div>
 
 				<div class="max-w-lg mx-auto relative z-10">
 					{/* 顶部导航 */}
 					<div class="flex items-center justify-center p-4">
-						<a href="/" class="flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 px-3 py-2 rounded-full transition-all">
-							<span class="text-white">←</span>
+						<a href="/" class="flex items-center gap-2 bg-white/70 backdrop-blur-sm hover:bg-white/90 px-3 py-2 rounded-full transition-all shadow-sm">
+							<span class="text-purple-600">←</span>
 							<img src="/kiss-banana.png" class="w-8 h-8 rounded-full" />
 						</a>
 					</div>
 
 					{/* 标题 */}
 					<div class="text-center mb-6">
-						<h1 class="text-2xl font-bold text-white mb-2">🃏 选择任务卡版本</h1>
-						<p class="text-white/70 text-sm">选择一个适合你们的版本开始游戏</p>
+						<h1 class="text-2xl font-bold text-purple-800 mb-2">🃏 选择任务卡版本</h1>
+						<p class="text-purple-700/70 text-sm">选择一个适合你们的版本开始游戏</p>
 					</div>
 
 					{/* 版本列表 */}
@@ -130,7 +130,7 @@ export default function Card_version() {
 					</div>
 
 					{/* 提示 */}
-					<div class="text-center text-pink-100 text-sm">
+					<div class="text-center text-purple-600/70 text-sm">
 						<p>💡 点击任意版本即可切换</p>
 					</div>
 				</div>
